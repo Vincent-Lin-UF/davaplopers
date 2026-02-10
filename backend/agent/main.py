@@ -12,7 +12,7 @@ app.add_middleware(
 )
 
 @app.get("/health")
-def health():
+async def health_check():
     return {"status":"healthy"}
 
 

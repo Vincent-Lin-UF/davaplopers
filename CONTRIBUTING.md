@@ -1,6 +1,6 @@
 # Git Guide
 
-This is just a small guide on Git and how we will ideally use it for our semester project
+This is just a small guide on Git made by [Vincent Lin](https://github.com/Vincent-Lin-UF)
 
 ---
 

@@ -13,7 +13,7 @@ class Orchestrator:
         self.tools = tools
 
     async def handle(self, request: ChatRequest) -> ChatResponse:
-        # gets strucutred contrainsts from user input
+        # gets structured constraints from user input
         constraints = await parse_constraints(request.message, self.llm)
 
         # tool calls from structured constraints
@@ -21,11 +21,25 @@ class Orchestrator:
         if constraints.destination:
             search = self.tools.get("search_places")
             if search:
-                query_parts = constraints.interests + constraints.dining_preferences
-                query = f"{' '.join(query_parts)} in {constraints.destination}" if query_parts else constraints.destination
-                results = search.execute(query=query, location=constraints.destination)
-                if isinstance(results, list):
-                    raw_results.extend(results)
+                # separate search per category for diverse results
+                queries = constraints.interests + constraints.dining_preferences
+                if not queries:
+                    queries = [constraints.destination]
+
+                seen_ids = set()
+                for query in queries:
+                    
+                    results = search.execute(
+                        query=query, location=constraints.destination
+                    )
+                    
+                    if isinstance(results, list):
+                        for r in results:
+                            # deduplicate by place_id or name
+                            key = r.get("place_id") or r.get("name")
+                            if key not in seen_ids:
+                                seen_ids.add(key)
+                                raw_results.append(r)
 
         recommendations = normalize(raw_results)
         ranked = rank(recommendations, constraints)

@@ -1,5 +1,5 @@
 from agent.core.schemas import Recommendation, TripConstraints
-from dataclass import dataclass
+from dataclasses import dataclass
 
 # private function of count keywrod matches
 def _substring_match(text: str, keywords: set[str]) -> int:

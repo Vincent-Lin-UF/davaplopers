@@ -1,15 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit} from '@angular/core';
 import { Router } from '@angular/router';
 
 declare const google: any;
 
 @Component({
-  selector: 'app-signup',
-  templateUrl: './signup.html',
+  selector: 'app-login',
+  templateUrl: './login.html'
 })
-export class SignupComponent implements OnInit {
-  constructor(private router: Router) {}
 
+export class LoginComponent implements OnInit {
+  constructor(private router: Router) {}
   ngOnInit() {
     const initGoogle = () => {
       google.accounts.id.initialize({

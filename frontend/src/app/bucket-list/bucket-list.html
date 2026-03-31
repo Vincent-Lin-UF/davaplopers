@@ -1,1 +1,31 @@
-<p>bucket-list works!</p>
+<div class="h-screen">
+  <div class="bg-yellow-500 rounded-md m-2 p-2 h-fit">
+    <h1 class="text-center text-2xl mb-4 mt-2">
+      bucket list!
+    </h1>
+    <form>
+      <input type="text" placeholder="search">
+      <button>
+        filter
+      </button>
+    </form>
+    <div class="overflow-y-auto h-96">
+      <div *ngFor="let item of bucketList" class="bg-yellow-100 rounded-md p-2 mb-2">
+        <div>
+          <img [src]="item.image" class="w-16 h-16 rounded-md inline-block">
+          <div class="inline-block h-16 align-middle ml-3">
+            <h1 class="text-xl mt-1">
+              {{ item.name }}
+            </h1>
+            <p>
+              {{ item.location }} | {{ item.tags }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button>
+      add new
+    </button>
+  </div>
+</div>

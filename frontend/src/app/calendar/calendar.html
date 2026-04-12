@@ -1,0 +1,188 @@
+<div class="min-h-screen bg-neutral-900 flex flex-col">
+
+ 
+  <div class="bg-neutral-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-sm">✈️</div>
+      <span class="text-white font-bold text-lg">PlanCation</span>
+    </div>
+    <div class="flex gap-4">
+      <a routerLink="/chat"       class="text-sm text-neutral-400 hover:text-white transition">Chat</a>
+      <a routerLink="/bucketlist" class="text-sm text-neutral-400 hover:text-white transition">Bucket List</a>
+    </div>
+  </div>
+
+
+  <div class="flex-1 px-4 py-6 max-w-5xl w-full mx-auto">
+
+   
+    <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+
+   
+      <div class="flex items-center gap-3">
+        <button (click)="prevMonth()"
+          class="w-8 h-8 flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-700 transition text-lg">
+          ‹
+        </button>
+        <h2 class="text-white text-lg font-bold min-w-36 text-center">
+          {{ MONTH_NAMES[currentMonth] }} {{ currentYear }}
+        </h2>
+        <button (click)="nextMonth()"
+          class="w-8 h-8 flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-700 transition text-lg">
+          ›
+        </button>
+        <button (click)="goToToday()"
+          class="text-xs text-neutral-400 hover:text-white bg-neutral-700 hover:bg-neutral-600 rounded-xl px-3 py-1.5 transition">
+          Today
+        </button>
+      </div>
+
+     
+      <button (click)="exportICS()"
+        class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-sm font-bold px-4 py-2 rounded-xl transition">
+        ↓ Export .ics
+      </button>
+    </div>
+
+
+    <div class="bg-neutral-800 rounded-2xl overflow-hidden">
+
+   
+      <div class="grid grid-cols-7 bg-neutral-800">
+        <div *ngFor="let name of DAY_NAMES"
+          class="py-3 text-center text-neutral-400 text-xs font-semibold uppercase tracking-wide">
+          {{ name }}
+        </div>
+      </div>
+
+
+      <div *ngFor="let week of weeks; let wi = index"
+        class="grid grid-cols-7 border-t border-neutral-700">
+
+        <div *ngFor="let d of week; let di = index"
+          class="min-h-28 p-2 group"
+          [class.border-r]="di < 6"
+          [class.border-neutral-700]="di < 6"
+          [class.bg-neutral-900]="!d.day"
+          [class.cursor-pointer]="!!d.day"
+          (click)="openAddModal(d.date)">
+
+ 
+          <div *ngIf="d.day" class="mb-1.5 flex">
+            <span
+              class="text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full"
+              [class.bg-yellow-400]="isToday(d.date)"
+              [class.text-neutral-900]="isToday(d.date)"
+              [class.text-neutral-300]="!isToday(d.date)">
+              {{ d.day }}
+            </span>
+          </div>
+
+
+          <div *ngFor="let event of d.events" class="mb-1"
+            (click)="$event.stopPropagation(); openDetail(event)">
+            <div class="bg-yellow-400 text-neutral-900 text-xs rounded-xl px-1.5 py-0.5 truncate cursor-pointer hover:bg-yellow-300 transition font-medium">
+              <span *ngIf="event.start_time" class="opacity-60 mr-0.5">{{ event.start_time }}</span>{{ event.title }}
+            </div>
+          </div>
+
+
+          <div *ngIf="d.day" class="hidden group-hover:block mt-1">
+            <span class="text-neutral-600 text-xs">+ add</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+ 
+
+  </div>
+
+
+
+  <div *ngIf="showAddModal"
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
+    <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-md">
+      <h3 class="text-white text-lg font-bold mb-1">New Event</h3>
+      <p class="text-neutral-400 text-sm mb-5">{{ selectedDate }}</p>
+
+      <div class="mb-3">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Title *</label>
+        <input [(ngModel)]="newTitle" type="text" placeholder="Event name"
+          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+
+      <div class="flex gap-3 mb-3">
+        <div class="flex-1">
+          <label class="block text-neutral-400 text-xs font-medium mb-1.5">Start time</label>
+          <input [(ngModel)]="newStartTime" type="time"
+            class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+        </div>
+        <div class="flex-1">
+          <label class="block text-neutral-400 text-xs font-medium mb-1.5">End time</label>
+          <input [(ngModel)]="newEndTime" type="time"
+            class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Location</label>
+        <input [(ngModel)]="newLocation" type="text" placeholder="Where?"
+          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Notes</label>
+        <textarea [(ngModel)]="newDescription" placeholder="Details…" rows="2"
+          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400 resize-none"></textarea>
+      </div>
+
+      <div class="flex gap-3">
+        <button (click)="closeAddModal()"
+          class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">
+          Cancel
+        </button>
+        <button (click)="addEvent()" [disabled]="addLoading || !newTitle.trim()"
+          class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
+          {{ addLoading ? 'Saving…' : 'Add Event' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div *ngIf="showDetailModal && detailEvent"
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
+    <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm">
+
+      <h3 class="text-white text-lg font-bold mb-1">{{ detailEvent.title }}</h3>
+      <p class="text-neutral-400 text-sm mb-4">
+        {{ detailEvent.date }}
+        <span *ngIf="detailEvent.start_time"> · {{ detailEvent.start_time }}</span>
+        <span *ngIf="detailEvent.end_time">–{{ detailEvent.end_time }}</span>
+      </p>
+
+      <div *ngIf="detailEvent.location" class="flex gap-2 mb-2 text-sm text-white">
+        <span></span><span>{{ detailEvent.location }}</span>
+      </div>
+      <div *ngIf="detailEvent.description" class="mb-4">
+        <p class="text-neutral-400 text-sm">{{ detailEvent.description }}</p>
+      </div>
+
+      <a [href]="googleCalendarLink(detailEvent)" target="_blank" rel="noopener"
+        class="block text-center bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition mb-2">
+         Open in Google Calendar
+      </a>
+      <button (click)="deleteEvent(detailEvent.id)"
+        class="w-full bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-xl transition mb-2">
+        Delete Event
+      </button>
+      <button (click)="closeDetail()"
+        class="w-full bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">
+        Close
+      </button>
+    </div>
+  </div>
+
+</div>

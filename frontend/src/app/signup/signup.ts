@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 declare const google: any;
 
 @Component({
   selector: 'app-signup',
+  imports: [RouterLink],
   templateUrl: './signup.html',
 })
 export class SignupComponent implements OnInit {

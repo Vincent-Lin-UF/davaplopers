@@ -1,10 +1,9 @@
-<div class="min-h-screen bg-neutral-900 px-4 py-4">
+<div class="min-h-screen bg-neutral-900 px-4 py-4" cdkDropListGroup>
   <div class="max-w-7xl mx-auto">
-
     <!-- main layout -->
     <div class="flex flex-col lg:flex-row gap-6 lg:items-stretch">
       <!-- left sidebar bucket list -->
-      <div class="w-full lg:w-[340px] shrink-0 flex">
+      <div class="w-full lg:w-[340px] shrink-0 flex lg:self-stretch">
         <div class="w-full flex flex-col">
           <!-- logo -->
           <div class="flex items-center gap-2 mb-2 ml-4 mt-2 shrink-0">
@@ -14,7 +13,7 @@
             <span class="text-white text-xl font-bold">PlanCation</span>
           </div>
 
-          <app-bucket-list class="block w-full flex-1"></app-bucket-list>
+          <app-bucket-list (itemDropped)="dropToBucketList($event)" class="block w-full flex-1"></app-bucket-list>
         </div>
       </div>
 
@@ -53,6 +52,11 @@
         <div class="grid grid-cols-7 gap-2 flex-1">
           <div
             *ngFor="let cell of days"
+            cdkDropList
+            [cdkDropListData]="cell"
+            [cdkDropListSortingDisabled]="true"
+            [cdkDropListEnterPredicate]="allowCalendarDrop"
+            (cdkDropListDropped)="dropOnDay($event, cell)"
             (click)="selectDay(cell)"
             class="rounded-xl p-2 min-h-24 cursor-pointer transition overflow-hidden"
             [class.bg-neutral-700]="cell.inMonth && !isSelected(cell.date)"
@@ -71,14 +75,24 @@
             </span>
 
             <div
-              *ngFor="let ev of eventsOn(cell.date)"
-              class="mt-1 text-xs rounded px-1 py-0.5 truncate"
+              *ngFor="let ev of cell.events"
+              cdkDrag
+              [cdkDragData]="ev"
+              cdkDragPreviewContainer="global"
+              class="mt-1 text-xs rounded px-1 py-0.5 truncate cursor-move z-50 relative"
               [class.bg-neutral-900]="isSelected(cell.date)"
               [class.text-yellow-400]="isSelected(cell.date)"
               [class.bg-yellow-400]="!isSelected(cell.date)"
               [class.text-neutral-900]="!isSelected(cell.date)"
             >
-              {{ ev.title }}
+              <div *cdkDragPreview class="bucket-card-preview bg-neutral-700 rounded-lg px-3 py-2 flex items-center gap-3 border border-yellow-400 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.8)] z-[99999] pointer-events-none">
+                 <img [src]="ev.item.image" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+                 <div class="min-w-0 flex-1">
+                   <h2 class="text-white text-sm font-semibold truncate">{{ ev.item.name }}</h2>
+                   <p class="text-neutral-400 text-[11px] truncate">{{ ev.item.location }}</p>
+                 </div>
+              </div>
+              {{ ev.item.name }}
             </div>
           </div>
         </div>

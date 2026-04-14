@@ -1,153 +1,163 @@
-<div class="h-[calc(100vh-5rem)] bg-neutral-900 flex justify-center px-2 py-4">
-  <div class="w-full max-w-sm bg-neutral-800 rounded-2xl p-4 shadow-lg">
-    <h1 class="text-center text-lg font-bold text-white mb-3">
-      Bucket List
-    </h1>
+<div class="w-full h-full bg-neutral-800 rounded-2xl p-4 shadow-lg flex flex-col">
+  <h1 class="text-center text-lg font-bold text-white mb-3">
+    Bucket List
+  </h1>
 
-    <form class="flex gap-2 mb-3" (submit)="$event.preventDefault()">
-      <input
-        type="text"
-        [(ngModel)]="searchTerm"
-        name="search"
-        placeholder="Search"
-        class="flex-1 bg-neutral-700 text-white text-xs placeholder-neutral-500 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
-      />
-      <button
-        type="button"
-        class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-xs font-bold px-3 py-2 rounded-lg transition"
-      >
-        Go
-      </button>
-    </form>
-
+  <form class="flex gap-2 mb-3" (submit)="$event.preventDefault()">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      name="search"
+      placeholder="Search"
+      class="flex-1 bg-neutral-700 text-white text-xs placeholder-neutral-500 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+    />
     <button
       type="button"
-      (click)="showForm = !showForm; editingIndex === null ? null : cancelEdit()"
-      class="w-full mb-3 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-xs py-2 rounded-lg transition"
+      class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-xs font-bold px-3 py-2 rounded-lg transition"
     >
-      {{
-        showForm
-          ? (editingIndex !== null ? 'Cancel Edit' : 'Close Form')
-          : 'Add New'
-      }}
+      Go
     </button>
+  </form>
 
-    <form
-      *ngIf="showForm"
-      (ngSubmit)="addItem()"
-      class="bg-neutral-700 rounded-xl p-3 mb-3 flex flex-col gap-2"
+  <button
+    type="button"
+    (click)="showForm = !showForm; editingIndex === null ? null : cancelEdit()"
+    class="w-full mb-3 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-xs py-2 rounded-lg transition"
+  >
+    {{
+      showForm
+        ? (editingIndex !== null ? 'Cancel Edit' : 'Close Form')
+        : 'Add New'
+    }}
+  </button>
+
+  <form
+    *ngIf="showForm"
+    (ngSubmit)="addItem()"
+    class="bg-neutral-700 rounded-xl p-3 mb-3 flex flex-col gap-2"
+  >
+    <input
+      type="text"
+      [(ngModel)]="newItem.name"
+      name="name"
+      placeholder="Item name"
+      class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+      required
+    />
+
+    <input
+      type="text"
+      [(ngModel)]="newItem.location"
+      name="location"
+      placeholder="Location"
+      class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+      required
+    />
+
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-neutral-300 font-semibold">
+        Priority
+      </label>
+
+      <select
+        [(ngModel)]="newItem.priority"
+        name="priority"
+        class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+        required
+      >
+        <option value="">Select priority</option>
+        <option *ngFor="let priority of priorityOptions" [value]="priority">
+          {{ priority }}
+        </option>
+      </select>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label class="text-xs text-neutral-300 font-semibold">
+        Available Activity Types
+      </label>
+
+      <p class="text-[10px] text-neutral-400">
+        Select one or more:
+      </p>
+
+      <div class="grid grid-cols-2 gap-2 bg-neutral-600 rounded-lg p-3">
+        <label
+          *ngFor="let type of activityTypeOptions"
+          class="flex items-center gap-2 text-xs text-white cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            [checked]="newItem.activityTypes.includes(type)"
+            (change)="toggleActivityType(type)"
+            class="accent-yellow-400"
+          />
+          <span>{{ type }}</span>
+        </label>
+      </div>
+
+      <p class="text-[10px] text-neutral-400">
+        Selected:
+        {{
+          newItem.activityTypes.length
+            ? newItem.activityTypes.join(', ')
+            : 'None yet'
+        }}
+      </p>
+    </div>
+
+    <div class="flex flex-col text-xs text-neutral-300">
+      <label class="mb-1">
+        Upload Image <span class="text-neutral-500">(optional)</span>
+      </label>
+
+      <input
+        type="file"
+        (change)="onFileSelected($event)"
+        accept="image/*"
+        class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+      />
+
+      <span class="text-[10px] text-neutral-500 mt-1">
+        If no image is selected, a default image will be used.
+      </span>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        type="submit"
+        class="flex-1 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-xs font-bold py-2 rounded-lg transition"
+      >
+        {{ editingIndex !== null ? 'Update Item' : 'Save Item' }}
+      </button>
+
+      <button
+        *ngIf="editingIndex !== null"
+        type="button"
+        (click)="cancelEdit()"
+        class="flex-1 bg-neutral-500 hover:bg-neutral-400 text-white text-xs font-bold py-2 rounded-lg transition"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+
+  <div
+    class="overflow-y-auto flex-1 min-h-0 px-1"
+    cdkDropList
+    id="bucketList"
+    (cdkDropListDropped)="onDrop($event)"
+  >
+    <div
+      *ngFor="let item of filteredBucketList(); let i = index"
+      cdkDrag
+      [cdkDragData]="item"
+      cdkDragPreviewContainer="global"
+      class="bucket-card bg-neutral-700 rounded-lg px-3 py-2 mb-2 flex items-center gap-3 cursor-move select-none"
     >
-      <input
-        type="text"
-        [(ngModel)]="newItem.name"
-        name="name"
-        placeholder="Item name"
-        class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
-        required
-      />
-
-      <input
-        type="text"
-        [(ngModel)]="newItem.location"
-        name="location"
-        placeholder="Location"
-        class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
-        required
-      />
-
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-neutral-300 font-semibold">
-          Priority
-        </label>
-
-        <select
-          [(ngModel)]="newItem.priority"
-          name="priority"
-          class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
-          required
-        >
-          <option value="">Select priority</option>
-          <option *ngFor="let priority of priorityOptions" [value]="priority">
-            {{ priority }}
-          </option>
-        </select>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label class="text-xs text-neutral-300 font-semibold">
-          Available Activity Types
-        </label>
-
-        <p class="text-[10px] text-neutral-400">
-          Select one or more:
-        </p>
-
-        <div class="grid grid-cols-2 gap-2 bg-neutral-600 rounded-lg p-3">
-          <label
-            *ngFor="let type of activityTypeOptions"
-            class="flex items-center gap-2 text-xs text-white cursor-pointer"
-          >
-            <input
-              type="checkbox"
-              [checked]="newItem.activityTypes.includes(type)"
-              (change)="toggleActivityType(type)"
-              class="accent-yellow-400"
-            />
-            <span>{{ type }}</span>
-          </label>
-        </div>
-
-        <p class="text-[10px] text-neutral-400">
-          Selected:
-          {{
-            newItem.activityTypes.length
-              ? newItem.activityTypes.join(', ')
-              : 'None yet'
-          }}
-        </p>
-      </div>
-
-      <div class="flex flex-col text-xs text-neutral-300">
-        <label class="mb-1">
-          Upload Image <span class="text-neutral-500">(optional)</span>
-        </label>
-
-        <input
-          type="file"
-          (change)="onFileSelected($event)"
-          accept="image/*"
-          class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
-        />
-
-        <span class="text-[10px] text-neutral-500 mt-1">
-          If no image is selected, a default image will be used.
-        </span>
-      </div>
-
-      <div class="flex gap-2">
-        <button
-          type="submit"
-          class="flex-1 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-xs font-bold py-2 rounded-lg transition"
-        >
-          {{ editingIndex !== null ? 'Update Item' : 'Save Item' }}
-        </button>
-
-        <button
-          *ngIf="editingIndex !== null"
-          type="button"
-          (click)="cancelEdit()"
-          class="flex-1 bg-neutral-500 hover:bg-neutral-400 text-white text-xs font-bold py-2 rounded-lg transition"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-
-    <!-- Compact Bucket List -->
-    <div class="overflow-y-auto max-h-80">
       <div
-        *ngFor="let item of filteredBucketList(); let i = index"
-        class="bg-neutral-700 rounded-lg px-3 py-2 mb-2 flex items-center gap-3"
+        *cdkDragPreview
+        class="bucket-card-preview bg-neutral-700 rounded-lg px-3 py-2 flex items-center gap-3 border border-yellow-400 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.8)] z-[99999]"
       >
         <img
           [src]="item.image"
@@ -168,26 +178,49 @@
             {{ item.priority }} | {{ item.activityTypes.join(', ') }}
           </p>
         </div>
+      </div>
 
-<div class="flex gap-1 shrink-0">
-  <!-- Edit -->
-  <button
-    type="button"
-    (click)="editItem(i)"
-    class="bg-yellow-400 hover:bg-yellow-300 p-2 rounded-md transition flex items-center justify-center"
-  >
-    ✏️
-  </button>
+      <div
+        *cdkDragPlaceholder
+        class="bucket-card-placeholder rounded-lg border border-dashed border-yellow-400 bg-neutral-600/30"
+      ></div>
 
-  <!-- Delete -->
-  <button
-    type="button"
-    (click)="deleteItem(i)"
-    class="bg-yellow-400 hover:bg-red-400 p-2 rounded-md transition flex items-center justify-center"
-  >
-    ❌
-  </button>
-</div>
+      <img
+        [src]="item.image"
+        [alt]="item.name"
+        class="w-14 h-14 rounded-lg object-cover shrink-0"
+      />
+
+      <div class="min-w-0 flex-1">
+        <h2 class="text-white text-sm font-semibold truncate">
+          {{ item.name }}
+        </h2>
+
+        <p class="text-neutral-400 text-[11px] truncate">
+          {{ item.location }}
+        </p>
+
+        <p class="text-neutral-500 text-[10px] truncate">
+          {{ item.priority }} | {{ item.activityTypes.join(', ') }}
+        </p>
+      </div>
+
+      <div class="flex gap-1 shrink-0">
+        <button
+          type="button"
+          (click)="editItem(i); $event.stopPropagation()"
+          class="bg-yellow-400 hover:bg-yellow-300 p-2 rounded-md transition flex items-center justify-center"
+        >
+          ✏️
+        </button>
+
+        <button
+          type="button"
+          (click)="deleteItem(i); $event.stopPropagation()"
+          class="bg-yellow-400 hover:bg-red-400 p-2 rounded-md transition flex items-center justify-center"
+        >
+          ❌
+        </button>
       </div>
     </div>
   </div>

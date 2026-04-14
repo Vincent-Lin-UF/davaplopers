@@ -1,31 +1,40 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BucketList } from '../bucket-list/bucket-list';
+import { DragDropModule, CdkDragDrop, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
+import { BucketList, BucketItem } from '../bucket-list/bucket-list';
 
 interface CalEvent {
-  date: string; // YYYY-MM-DD
-  title: string;
+  date: string;
+  item: BucketItem;
 }
 
 interface DayCell {
   date: Date;
   inMonth: boolean;
+  id: string;
+  events: CalEvent[];
 }
 
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, BucketList],
+  imports: [CommonModule, FormsModule, DragDropModule, BucketList],
   templateUrl: './calendar.html',
 })
-export class CalendarComponent {
+export class CalendarComponent implements OnInit {
+  @ViewChild(BucketList) bucketListComponent!: BucketList;
+
   today = new Date();
   current = new Date(this.today.getFullYear(), this.today.getMonth(), 1);
 
   events: CalEvent[] = [];
   selectedDate: string | null = null;
-  newEventTitle = '';
+  days: DayCell[] = [];
+
+  ngOnInit() {
+    this.generateDays();
+  }
 
   get monthLabel() {
     return this.current.toLocaleString('default', {
@@ -34,7 +43,7 @@ export class CalendarComponent {
     });
   }
 
-  get days(): DayCell[] {
+  generateDays() {
     const year = this.current.getFullYear();
     const month = this.current.getMonth();
     const firstDow = new Date(year, month, 1).getDay();
@@ -42,30 +51,26 @@ export class CalendarComponent {
     const cells: DayCell[] = [];
 
     for (let i = firstDow - 1; i >= 0; i--) {
-      cells.push({ date: new Date(year, month, -i), inMonth: false });
+      const d = new Date(year, month, -i);
+      cells.push({ date: d, inMonth: false, id: this.fmt(d), events: [] });
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-      cells.push({ date: new Date(year, month, d), inMonth: true });
+      const dt = new Date(year, month, d);
+      cells.push({ date: dt, inMonth: true, id: this.fmt(dt), events: [] });
     }
 
     while (cells.length % 7 !== 0) {
       const last = cells[cells.length - 1].date;
-      cells.push({
-        date: new Date(
-          last.getFullYear(),
-          last.getMonth(),
-          last.getDate() + 1
-        ),
-        inMonth: false,
-      });
+      const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1);
+      cells.push({ date: d, inMonth: false, id: this.fmt(d), events: [] });
     }
 
-    return cells;
-  }
+    cells.forEach(cell => {
+      cell.events = this.events.filter(e => e.date === cell.id);
+    });
 
-  eventsOn(date: Date): CalEvent[] {
-    return this.events.filter((e) => e.date === this.fmt(date));
+    this.days = cells;
   }
 
   isToday(date: Date) {
@@ -78,34 +83,66 @@ export class CalendarComponent {
 
   selectDay(cell: DayCell) {
     this.selectedDate = this.fmt(cell.date);
-    this.newEventTitle = '';
   }
 
-  addEvent() {
-    if (!this.selectedDate || !this.newEventTitle.trim()) return;
+  allowCalendarDrop = (drag: CdkDrag<any>, drop: CdkDropList<DayCell>) => {
+    return true;
+  };
 
-    this.events.push({
-      date: this.selectedDate,
-      title: this.newEventTitle.trim(),
-    });
+  dropOnDay(event: CdkDragDrop<DayCell>, cell: DayCell) {
+    if (event.previousContainer.id === 'bucketList') {
+      const item = event.item.data as BucketItem;
+      
+      const idx = this.bucketListComponent.bucketList.findIndex(i => i === item);
+      if (idx !== -1) {
+        this.bucketListComponent.bucketList.splice(idx, 1);
+      }
 
-    this.newEventTitle = '';
+      const newEvent: CalEvent = { date: cell.id, item };
+      this.events.push(newEvent);
+      cell.events.push(newEvent);
+      this.selectedDate = cell.id;
+    } else {
+      if (event.previousContainer !== event.container) {
+        const calEvent = event.item.data as CalEvent;
+        const prevCellData = event.previousContainer.data as DayCell;
+        const evIdx = prevCellData.events.findIndex(e => e === calEvent);
+        if (evIdx > -1) prevCellData.events.splice(evIdx, 1);
+
+        calEvent.date = cell.id;
+        cell.events.push(calEvent);
+        this.selectedDate = cell.id;
+      }
+    }
+  }
+
+  dropToBucketList(event: CdkDragDrop<any>) {
+    if (event.previousContainer.id !== 'bucketList') {
+      const calEvent = event.item.data as CalEvent;
+      
+      const globalIdx = this.events.findIndex(e => e === calEvent);
+      if (globalIdx > -1) {
+        this.events.splice(globalIdx, 1);
+      }
+
+      const prevCellData = event.previousContainer.data as DayCell;
+      if (prevCellData && prevCellData.events) {
+         const evIdx = prevCellData.events.findIndex(e => e === calEvent);
+         if (evIdx > -1) prevCellData.events.splice(evIdx, 1);
+      }
+
+      this.bucketListComponent.bucketList.push(calEvent.item);
+    }
   }
 
   prevMonth() {
-    this.current = new Date(
-      this.current.getFullYear(),
-      this.current.getMonth() - 1,
-      1
-    );
+    this.current = new Date(this.current.getFullYear(), this.current.getMonth() - 1, 1);
+    this.generateDays();
   }
 
   nextMonth() {
-    this.current = new Date(
-      this.current.getFullYear(),
-      this.current.getMonth() + 1,
-      1
-    );
+    this.current = new Date(this.current.getFullYear(), this.current.getMonth() + 1, 1);
+    this.generateDays();
   }
 
   private fmt(d: Date): string {

@@ -1,14 +1,25 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+
+export interface BucketItem {
+  name: string;
+  location: string;
+  priority: string;
+  activityTypes: string[];
+  image: string;
+}
 
 @Component({
   selector: 'app-bucket-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './bucket-list.html'
 })
 export class BucketList {
+  @Output() itemDropped = new EventEmitter<CdkDragDrop<any>>();
+
   showForm = false;
   searchTerm = '';
   editingIndex: number | null = null;
@@ -26,7 +37,7 @@ export class BucketList {
     'Entertainment'
   ];
 
-  bucketList = [
+  bucketList: BucketItem[] = [
     {
       name: 'Visit Tokyo',
       location: 'Japan',
@@ -43,13 +54,21 @@ export class BucketList {
     }
   ];
 
-  newItem = {
+  newItem: BucketItem = {
     name: '',
     location: '',
     priority: '',
-    activityTypes: [] as string[],
+    activityTypes: [],
     image: ''
   };
+
+  onDrop(event: CdkDragDrop<any>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(this.bucketList, event.previousIndex, event.currentIndex);
+    } else {
+      this.itemDropped.emit(event);
+    }
+  }
 
   addItem(): void {
     if (
@@ -61,7 +80,7 @@ export class BucketList {
       return;
     }
 
-    const itemData = {
+    const itemData: BucketItem = {
       name: this.newItem.name.trim(),
       location: this.newItem.location.trim(),
       priority: this.newItem.priority,
@@ -145,7 +164,7 @@ export class BucketList {
     reader.readAsDataURL(file);
   }
 
-  filteredBucketList() {
+  filteredBucketList(): BucketItem[] {
     const term = this.searchTerm.toLowerCase().trim();
 
     if (!term) return this.bucketList;

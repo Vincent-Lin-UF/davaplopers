@@ -1,32 +1,56 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-
-declare const google: any;
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-signup',
-  imports: [RouterLink],
+  imports: [RouterLink, ReactiveFormsModule, CommonModule],
   templateUrl: './signup.html',
 })
-export class SignupComponent implements OnInit {
-  constructor(private router: Router) {}
+export class SignupComponent {
+  form: FormGroup;
+  loading = false;
+  errorMsg = '';
 
-  ngOnInit() {
-    const initGoogle = () => {
-      google.accounts.id.initialize({
-        client_id: '143526963027-1vb8npsrdgjdhg92goh91nekbs79dvib.apps.googleusercontent.com',
-        callback: () => this.router.navigate(['/chat']),
-      });
-      google.accounts.id.renderButton(
-        document.getElementById('google-btn'),
-        { theme: 'filled_black', size: 'large', text: 'continue_with' }
-      );
-    };
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private router: Router
+  ) {
+    this.form = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+    });
+  }
 
-    if (typeof google !== 'undefined') {
-      initGoogle();
-    } else {
-      window.onload = initGoogle;
+  onSubmit() {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
     }
+
+    this.loading = true;
+    this.errorMsg = '';
+
+    const { firstName, lastName, email, password } = this.form.value;
+
+    this.auth.signup({ name: `${firstName} ${lastName}`, email, password }).subscribe({
+      next: (user) => {
+        this.auth.saveSession(user);
+        this.router.navigate(['/chat']);
+      },
+      error: (err) => {
+        this.loading = false;
+        if (err.status === 409) {
+          this.errorMsg = 'An account with that email already exists.';
+        } else {
+          this.errorMsg = 'Something went wrong. Please try again.';
+        }
+      },
+    });
   }
 }

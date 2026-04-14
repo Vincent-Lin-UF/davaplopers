@@ -14,35 +14,59 @@
       <h1 class="text-white text-2xl font-bold mb-1">Create an account</h1>
       <p class="text-neutral-400 text-sm mb-6">Start planning your next trip</p>
 
-      <!-- Fields -->
-      <div class="flex gap-3 mb-3">
-        <div class="flex-1">
-          <label class="block text-neutral-400 text-xs font-medium mb-1.5">First name</label>
-          <input type="text" placeholder="John"
-            class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+        <!-- Name row -->
+        <div class="flex gap-3 mb-3">
+          <div class="flex-1">
+            <label class="block text-neutral-400 text-xs font-medium mb-1.5">First name</label>
+            <input formControlName="firstName" type="text" placeholder="John"
+              class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
+            @if (form.get('firstName')?.invalid && form.get('firstName')?.touched) {
+              <p class="text-red-400 text-xs mt-1">Required</p>
+            }
+          </div>
+          <div class="flex-1">
+            <label class="block text-neutral-400 text-xs font-medium mb-1.5">Last name</label>
+            <input formControlName="lastName" type="text" placeholder="Smith"
+              class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
+            @if (form.get('lastName')?.invalid && form.get('lastName')?.touched) {
+              <p class="text-red-400 text-xs mt-1">Required</p>
+            }
+          </div>
         </div>
-        <div class="flex-1">
-          <label class="block text-neutral-400 text-xs font-medium mb-1.5">Last name</label>
-          <input type="text" placeholder="Smith"
+
+        <!-- Email -->
+        <div class="mb-3">
+          <label class="block text-neutral-400 text-xs font-medium mb-1.5">Email</label>
+          <input formControlName="email" type="email" placeholder="you@email.com"
             class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
+          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <p class="text-red-400 text-xs mt-1">Enter a valid email</p>
+          }
         </div>
-      </div>
 
-      <div class="mb-3">
-        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Email</label>
-        <input type="email" placeholder="you@email.com"
-          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
-      </div>
+        <!-- Password -->
+        <div class="mb-6">
+          <label class="block text-neutral-400 text-xs font-medium mb-1.5">Password</label>
+          <input formControlName="password" type="password" placeholder="••••••••"
+            class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
+          @if (form.get('password')?.invalid && form.get('password')?.touched) {
+            <p class="text-red-400 text-xs mt-1">Password must be at least 8 characters</p>
+          }
+        </div>
 
-      <div class="mb-6">
-        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Password</label>
-        <input type="password" placeholder="••••••••"
-          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
-      </div>
+        <!-- Server error -->
+        @if (errorMsg) {
+          <p class="text-red-400 text-sm mb-4 text-center">{{ errorMsg }}</p>
+        }
 
-      <button class="w-full bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-sm py-3 rounded-xl transition">
-        Create Account
-      </button>
+        <button type="submit" [disabled]="loading"
+          class="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 font-bold text-sm py-3 rounded-xl transition">
+          {{ loading ? 'Creating account...' : 'Create Account' }}
+        </button>
+
+      </form>
 
       <div class="flex items-center gap-3 my-4">
         <div class="flex-1 h-px bg-neutral-600"></div>

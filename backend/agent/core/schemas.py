@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import date
 
 
@@ -25,6 +25,18 @@ class Recommendation(BaseModel):
     score: float = 0.0
     tags: list[str] = []
     source: Optional[str] = None
+
+
+class SignupRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+
+
+class SignupResponse(BaseModel):
+    user_id: int
+    name: str
+    email: str
 
 
 class ChatRequest(BaseModel):

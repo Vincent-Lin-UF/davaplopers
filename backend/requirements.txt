@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+openai
+aiomysql
+cryptography
+requests
+bcrypt
+email-validator

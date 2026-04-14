@@ -7,3 +7,4 @@ cryptography
 requests
 bcrypt
 email-validator
+python-jose[cryptography]

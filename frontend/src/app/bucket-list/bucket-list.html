@@ -1,44 +1,161 @@
-<div class="min-h-screen flex items-center justify-center px-4 bg-neutral-900">
-  <div class="w-full max-w-md bg-neutral-800 rounded-2xl p-6">
-    
-    <h1 class="text-center text-2xl font-bold text-white mb-4">
-      Bucket List!
+<div class="min-h-screen bg-neutral-900 flex justify-center px-2 py-4">
+  <div class="w-full max-w-xs bg-neutral-800 rounded-2xl p-4 shadow-lg">
+    <h1 class="text-center text-lg font-bold text-white mb-3">
+      Bucket List
     </h1>
 
-    <form class="flex gap-2 mb-4">
-      <input 
-        type="text" 
+    <!-- Search -->
+    <form class="flex gap-2 mb-3" (submit)="$event.preventDefault()">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        name="search"
         placeholder="Search"
-        class="flex-1 bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+        class="flex-1 bg-neutral-700 text-white text-xs placeholder-neutral-500 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+      />
+      <button
+        type="button"
+        class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-xs font-bold px-3 py-2 rounded-lg transition"
       >
-      <button 
-        type="submit"
-        class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-sm font-bold px-4 py-2 rounded-xl transition"
-      >
-        Filter
+        Go
       </button>
     </form>
 
-    <button 
-      class="w-full mb-4 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-sm py-3 rounded-xl transition"
+    <!-- Toggle Add Form -->
+    <button
+      type="button"
+      (click)="showForm = !showForm"
+      class="w-full mb-3 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-xs py-2 rounded-lg transition"
     >
-      Add New
+      {{ showForm ? 'Close Form' : 'Add New' }}
     </button>
 
+    <!-- Add Form -->
+    <form
+      *ngIf="showForm"
+      (ngSubmit)="addItem()"
+      class="bg-neutral-700 rounded-xl p-3 mb-3 flex flex-col gap-2"
+    >
+      <input
+        type="text"
+        [(ngModel)]="newItem.name"
+        name="name"
+        placeholder="Item name"
+        class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+        required
+      />
 
-    <div class="overflow-y-auto max-h-96">
-      <div *ngFor="let item of bucketList" class="bg-neutral-700 rounded-xl p-3 mb-3 flex items-center gap-3">
-        <img [src]="item.image" [alt]="item.name" class="w-16 h-16 rounded-xl object-cover">
-        <div>
-          <h2 class="text-white text-lg font-semibold">
+      <input
+        type="text"
+        [(ngModel)]="newItem.location"
+        name="location"
+        placeholder="Location"
+        class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+        required
+      />
+
+      <!-- Priority -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-neutral-300 font-semibold">
+          Priority
+        </label>
+
+        <select
+          [(ngModel)]="newItem.priority"
+          name="priority"
+          class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+          required
+        >
+          <option value="">Select priority</option>
+          <option *ngFor="let priority of priorityOptions" [value]="priority">
+            {{ priority }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Activity Types -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-neutral-300 font-semibold">
+          Available Activity Types
+        </label>
+
+        <p class="text-[10px] text-neutral-400">
+          Select one or more:
+        </p>
+
+        <div class="grid grid-cols-2 gap-2 bg-neutral-600 rounded-lg p-3">
+          <label
+            *ngFor="let type of activityTypeOptions"
+            class="flex items-center gap-2 text-xs text-white cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              [checked]="newItem.activityTypes.includes(type)"
+              (change)="toggleActivityType(type)"
+              class="accent-yellow-400"
+            />
+            <span>{{ type }}</span>
+          </label>
+        </div>
+
+        <p class="text-[10px] text-neutral-400">
+          Selected:
+          {{
+            newItem.activityTypes.length
+              ? newItem.activityTypes.join(', ')
+              : 'None yet'
+          }}
+        </p>
+      </div>
+
+      <!-- Optional image -->
+      <div class="flex flex-col text-xs text-neutral-300">
+        <label class="mb-1">
+          Upload Image <span class="text-neutral-500">(optional)</span>
+        </label>
+
+        <input
+          type="file"
+          (change)="onFileSelected($event)"
+          accept="image/*"
+          class="bg-neutral-600 text-white text-xs rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-yellow-400"
+        />
+
+        <span class="text-[10px] text-neutral-500 mt-1">
+          If no image is selected, a default image will be used.
+        </span>
+      </div>
+
+      <button
+        type="submit"
+        class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-xs font-bold py-2 rounded-lg transition"
+      >
+        Save Item
+      </button>
+    </form>
+
+    <!-- Bucket List -->
+    <div class="overflow-y-auto max-h-80">
+      <div
+        *ngFor="let item of filteredBucketList()"
+        class="bg-neutral-700 rounded-lg p-2 mb-2 flex items-center gap-2"
+      >
+        <img
+          [src]="item.image"
+          [alt]="item.name"
+          class="w-12 h-12 rounded-lg object-cover"
+        />
+
+        <div class="min-w-0">
+          <h2 class="text-white text-sm font-semibold truncate">
             {{ item.name }}
           </h2>
-          <p class="text-neutral-400 text-sm">
-            {{ item.location }} | {{ item.tags }}
+
+          <p class="text-neutral-400 text-[11px] truncate">
+            {{ item.location }} | {{ item.priority }} | {{ item.activityTypes.join(', ') }}
           </p>
         </div>
       </div>
     </div>
-
   </div>
 </div>

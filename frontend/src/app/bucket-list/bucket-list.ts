@@ -1,6 +1,7 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 
 export interface BucketItem {
@@ -14,10 +15,11 @@ export interface BucketItem {
 @Component({
   selector: 'app-bucket-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, DragDropModule],
   templateUrl: './bucket-list.html'
 })
 export class BucketList {
+  @Input() showNav = true;
   @Output() itemDropped = new EventEmitter<CdkDragDrop<any>>();
 
   showForm = false;

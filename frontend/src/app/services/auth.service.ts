@@ -14,6 +14,19 @@ export interface SignupResponse {
   email: string;
 }
 
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  token_type: string;
+  user_id: number;
+  name: string;
+  email: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private base = 'http://localhost:8000/api/auth';
@@ -24,13 +37,24 @@ export class AuthService {
     return this.http.post<SignupResponse>(`${this.base}/signup`, payload);
   }
 
-  saveSession(user: SignupResponse): void {
-    localStorage.setItem('user', JSON.stringify(user));
+  login(payload: LoginPayload): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.base}/login`, payload);
+  }
+
+  saveSession(user: SignupResponse | LoginResponse): void {
+    if ('access_token' in user) {
+      localStorage.setItem('token', user.access_token);
+    }
+    localStorage.setItem('user', JSON.stringify({ user_id: user.user_id, name: user.name, email: user.email }));
   }
 
   getUser(): SignupResponse | null {
     const raw = localStorage.getItem('user');
     return raw ? JSON.parse(raw) : null;
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('token');
   }
 
   isLoggedIn(): boolean {
@@ -39,5 +63,6 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   }
 }

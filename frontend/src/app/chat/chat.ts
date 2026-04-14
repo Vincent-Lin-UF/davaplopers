@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { NgFor, NgIf } from '@angular/common';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -10,7 +11,7 @@ interface Message {
 
 @Component({
   selector: 'app-chat',
-  imports: [FormsModule, NgFor, NgIf],
+  imports: [FormsModule, NgFor, NgIf, RouterLink, RouterLinkActive],
   templateUrl: './chat.html',
 })
 export class ChatComponent {

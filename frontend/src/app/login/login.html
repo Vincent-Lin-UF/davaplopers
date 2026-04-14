@@ -16,26 +16,41 @@
         <p class="text-neutral-400 text-sm mb-6">Start planning your next trip</p>
       </div>
 
-      <div class="mb-3">
-        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Email</label>
-        <input type="email" placeholder="you@email.com"
-          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
-      </div>
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
 
-      <div class="mb-6">
-        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Password</label>
-        <input type="password" placeholder="••••••••"
-          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
-      </div>
+        <div class="mb-3">
+          <label class="block text-neutral-400 text-xs font-medium mb-1.5">Email</label>
+          <input formControlName="email" type="email" placeholder="you@email.com"
+            class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
+          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+            <p class="text-red-400 text-xs mt-1">Enter a valid email</p>
+          }
+        </div>
 
-      <button class="w-full bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-sm py-3 rounded-xl transition">
-        Login
-      </button>
-        
-      <div class="mt-2 pr-3 text-yellow-500 underline justify-self-end cursor-pointer" id="createAccount" routerLink="">
+        <div class="mb-6">
+          <label class="block text-neutral-400 text-xs font-medium mb-1.5">Password</label>
+          <input formControlName="password" type="password" placeholder="••••••••"
+            class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400" />
+          @if (form.get('password')?.invalid && form.get('password')?.touched) {
+            <p class="text-red-400 text-xs mt-1">Password is required</p>
+          }
+        </div>
+
+        @if (errorMsg) {
+          <p class="text-red-400 text-sm mb-4 text-center">{{ errorMsg }}</p>
+        }
+
+        <button type="submit" [disabled]="loading"
+          class="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 font-bold text-sm py-3 rounded-xl transition">
+          {{ loading ? 'Logging in...' : 'Login' }}
+        </button>
+
+      </form>
+
+      <div class="mt-2 pr-3 text-yellow-500 underline justify-self-end cursor-pointer" id="createAccount" routerLink="/signup">
         Create Account
       </div>
-      
+
       <div class="flex items-center gap-3 my-4">
         <div class="flex-1 h-px bg-neutral-600"></div>
         <span class="text-neutral-500 text-xs">or</span>

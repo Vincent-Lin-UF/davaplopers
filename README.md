@@ -28,7 +28,7 @@ ssh -L 3307:mysql.cise.ufl.edu:3306 <cise-username>@rain.cise.ufl.edu -N
 
 ### 2. Configure environment variables
 
-Copy the `.env` file in `backend/` and fill in your credentials:
+Copy `backend/.env.example` to `backend/.env` and fill in your credentials:
 
 ```
 OPENAI_API_KEY=<your key>
@@ -38,6 +38,10 @@ DB_PORT=3307
 DB_USER=<cise-username>
 DB_PASSWORD=<cise-db-password>
 DB_NAME=travel_app
+
+# JWT secret — used to sign auth tokens
+# Generate one with: python3 -c "import secrets; print(secrets.token_hex(32))"
+JWT_SECRET=<generate a long random secret>
 ```
 
 ### 3. Install dependencies and start the server

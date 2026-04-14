@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { DragDropModule, CdkDragDrop, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { BucketList, BucketItem } from '../bucket-list/bucket-list';
 
@@ -19,7 +20,7 @@ interface DayCell {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule, BucketList],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, DragDropModule, BucketList],
   templateUrl: './calendar.html',
 })
 export class CalendarComponent implements OnInit {

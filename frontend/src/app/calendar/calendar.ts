@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { BucketList } from '../bucket-list/bucket-list';
 
 interface CalEvent {
   date: string; // YYYY-MM-DD
@@ -15,7 +16,7 @@ interface DayCell {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BucketList],
   templateUrl: './calendar.html',
 })
 export class CalendarComponent {
@@ -27,7 +28,10 @@ export class CalendarComponent {
   newEventTitle = '';
 
   get monthLabel() {
-    return this.current.toLocaleString('default', { month: 'long', year: 'numeric' });
+    return this.current.toLocaleString('default', {
+      month: 'long',
+      year: 'numeric',
+    });
   }
 
   get days(): DayCell[] {
@@ -40,19 +44,28 @@ export class CalendarComponent {
     for (let i = firstDow - 1; i >= 0; i--) {
       cells.push({ date: new Date(year, month, -i), inMonth: false });
     }
+
     for (let d = 1; d <= daysInMonth; d++) {
       cells.push({ date: new Date(year, month, d), inMonth: true });
     }
+
     while (cells.length % 7 !== 0) {
       const last = cells[cells.length - 1].date;
-      cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), inMonth: false });
+      cells.push({
+        date: new Date(
+          last.getFullYear(),
+          last.getMonth(),
+          last.getDate() + 1
+        ),
+        inMonth: false,
+      });
     }
 
     return cells;
   }
 
   eventsOn(date: Date): CalEvent[] {
-    return this.events.filter(e => e.date === this.fmt(date));
+    return this.events.filter((e) => e.date === this.fmt(date));
   }
 
   isToday(date: Date) {
@@ -70,16 +83,29 @@ export class CalendarComponent {
 
   addEvent() {
     if (!this.selectedDate || !this.newEventTitle.trim()) return;
-    this.events.push({ date: this.selectedDate, title: this.newEventTitle.trim() });
+
+    this.events.push({
+      date: this.selectedDate,
+      title: this.newEventTitle.trim(),
+    });
+
     this.newEventTitle = '';
   }
 
   prevMonth() {
-    this.current = new Date(this.current.getFullYear(), this.current.getMonth() - 1, 1);
+    this.current = new Date(
+      this.current.getFullYear(),
+      this.current.getMonth() - 1,
+      1
+    );
   }
 
   nextMonth() {
-    this.current = new Date(this.current.getFullYear(), this.current.getMonth() + 1, 1);
+    this.current = new Date(
+      this.current.getFullYear(),
+      this.current.getMonth() + 1,
+      1
+    );
   }
 
   private fmt(d: Date): string {

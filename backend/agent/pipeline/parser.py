@@ -14,12 +14,13 @@ Return ONLY valid JSON with these fields (omit any not mentioned):
 User message: {message}"""
 
 
-async def parse_constraints(message: str, llm: LLMProvider) -> TripConstraints:
+async def parse_constraints(message: str, llm: LLMProvider, history: list[dict] | None = None) -> TripConstraints:
     messages = [
         {
             "role": "system",
-            "content": "You extract structured travel constraints from user messages. Respond with only valid JSON.",
+            "content": "You extract structured travel constraints from the latest user message. Use the prior conversation for context (e.g. if destination was stated earlier, carry it forward). Respond with only valid JSON.",
         },
+        *(history or []),
         {"role": "user", "content": PARSE_PROMPT.format(message=message)},
     ]
     data = await llm.extract_json(messages)

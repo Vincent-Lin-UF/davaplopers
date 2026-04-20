@@ -33,6 +33,34 @@
         <!-- Calendar -->
         <div class="flex-1 w-full bg-neutral-800 rounded-2xl p-6 flex flex-col">
 
+          <!-- Trip selector -->
+          <div class="relative mb-4">
+            <button (click)="showTripMenu = !showTripMenu"
+              class="text-white bg-neutral-700 hover:bg-neutral-600 text-sm font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
+              ✈️ {{ currentTripName }}
+              <span class="text-neutral-400 text-xs">▼</span>
+            </button>
+            <div *ngIf="showTripMenu"
+              class="absolute top-full left-0 mt-1 bg-neutral-700 rounded-xl shadow-lg border border-neutral-600 w-64 z-[100] py-1">
+              <div *ngFor="let t of trips" (click)="switchTrip(t)"
+                class="px-4 py-2 text-sm cursor-pointer hover:bg-neutral-600 transition truncate"
+                [class.text-yellow-400]="t.trip_id === tripId"
+                [class.text-white]="t.trip_id !== tripId">
+                {{ t.trip_name || 'Unnamed' }}
+              </div>
+              <div class="border-t border-neutral-600 my-1"></div>
+              <button (click)="createNewTrip()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
+                + New trip
+              </button>
+              <button (click)="renameTrip()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
+                ✎ Rename current
+              </button>
+              <button (click)="setDestination()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
+                📍 Set destination
+              </button>
+            </div>
+          </div>
+
           <!-- Month nav + actions -->
           <div class="flex items-center justify-between mb-6 flex-wrap gap-2">
             <div class="flex items-center gap-2">
@@ -253,5 +281,70 @@
     <button (click)="openInviteModal()" class="w-full mt-5 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
       ✉️ Send New Invite
     </button>
+  </div>
+</div>
+
+<!-- ── New Trip Modal ─────────────────────────────────────────────────────── -->
+<div *ngIf="showNewTripModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
+    <h3 class="text-white text-lg font-bold mb-1">✈️ New Trip</h3>
+    <p class="text-neutral-400 text-sm mb-5">Start planning a new getaway.</p>
+    <div class="mb-3">
+      <label class="block text-neutral-400 text-xs font-medium mb-1.5">Trip name</label>
+      <input [(ngModel)]="newTripNameInput" type="text" placeholder="e.g. Summer in Tokyo"
+        class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+    <div class="mb-6">
+      <label class="block text-neutral-400 text-xs font-medium mb-1.5">Destination <span class="text-neutral-500">(optional)</span></label>
+      <input [(ngModel)]="newTripDestinationInput" type="text" placeholder="e.g. Tokyo, Japan"
+        class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+    <div class="flex gap-3">
+      <button (click)="closeNewTripModal()" class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
+      <button (click)="confirmNewTrip()" [disabled]="!newTripNameInput.trim() || tripSaving"
+        class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
+        {{ tripSaving ? 'Creating...' : 'Create' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Rename Trip Modal ──────────────────────────────────────────────────── -->
+<div *ngIf="showRenameTripModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
+    <h3 class="text-white text-lg font-bold mb-1">✎ Rename Trip</h3>
+    <p class="text-neutral-400 text-sm mb-5">Give this trip a new name.</p>
+    <div class="mb-6">
+      <label class="block text-neutral-400 text-xs font-medium mb-1.5">Trip name</label>
+      <input [(ngModel)]="renameTripInput" type="text"
+        class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+    <div class="flex gap-3">
+      <button (click)="closeRenameTripModal()" class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
+      <button (click)="confirmRenameTrip()" [disabled]="!renameTripInput.trim() || tripSaving"
+        class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
+        {{ tripSaving ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Destination Modal ──────────────────────────────────────────────────── -->
+<div *ngIf="showDestinationModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
+    <h3 class="text-white text-lg font-bold mb-1">📍 Set Destination</h3>
+    <p class="text-neutral-400 text-sm mb-5">This is where the trip map centers.</p>
+    <div class="mb-6">
+      <label class="block text-neutral-400 text-xs font-medium mb-1.5">Destination</label>
+      <input [(ngModel)]="destinationInput" type="text" placeholder="e.g. Paris, France"
+        class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+    </div>
+    <div class="flex gap-3">
+      <button (click)="closeDestinationModal()" class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
+      <button (click)="confirmDestination()" [disabled]="tripSaving"
+        class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
+        {{ tripSaving ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
   </div>
 </div>

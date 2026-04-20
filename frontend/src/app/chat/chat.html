@@ -226,19 +226,47 @@
 </div>
 
 <!-- Add to Calendar Modal -->
-<div *ngIf="showCalendarModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+<div *ngIf="showCalendarModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
     <h3 class="text-white text-lg font-bold mb-1">📅 Add Trip to Calendar</h3>
-    <p class="text-neutral-400 text-sm mb-5">Pick a start date — each day will be added automatically.</p>
+    <p class="text-neutral-400 text-sm mb-5">Pick a trip to add this to, and a start date.</p>
+
+    <!-- Trip picker -->
     <div class="mb-4">
-      <label class="block text-neutral-400 text-xs font-medium mb-1.5">Trip Start Date</label>
+      <label class="block text-neutral-400 text-xs font-medium mb-1.5">Add to</label>
+      <select [(ngModel)]="selectedTripId"
+        class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+        <option *ngFor="let t of trips" [ngValue]="t.trip_id">{{ t.trip_name || 'Unnamed' }}</option>
+        <option [ngValue]="'new'">+ Create new trip</option>
+      </select>
+    </div>
+
+    <!-- New-trip fields -->
+    <div *ngIf="selectedTripId === 'new'">
+      <div class="mb-3">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Trip name</label>
+        <input [(ngModel)]="newTripNameInput" type="text" placeholder="e.g. Summer in Tokyo"
+          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+      <div class="mb-4">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Destination <span class="text-neutral-500">(optional)</span></label>
+        <input [(ngModel)]="newTripDestinationInput" type="text" placeholder="e.g. Tokyo, Japan"
+          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+    </div>
+
+    <!-- Start date -->
+    <div class="mb-4">
+      <label class="block text-neutral-400 text-xs font-medium mb-1.5">Trip start date</label>
       <input [(ngModel)]="calendarStartDate" type="date"
         class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
     </div>
+
     <div class="flex gap-3">
       <button (click)="closeCalendarModal()"
         class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
-      <button (click)="addPlanToCalendar()" [disabled]="!calendarStartDate || calendarSaving"
+      <button (click)="addPlanToCalendar()"
+        [disabled]="!calendarStartDate || calendarSaving || (selectedTripId === 'new' && !newTripNameInput.trim())"
         class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
         {{ calendarSaving ? 'Adding...' : 'Add to Both' }}
       </button>

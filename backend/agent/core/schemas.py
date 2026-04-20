@@ -26,9 +26,15 @@ class Recommendation(BaseModel):
     source: Optional[str] = None
 
 
+class ChatTurn(BaseModel):
+    role: str  # 'user' or 'assistant'
+    content: str
+
+
 class ChatRequest(BaseModel):
     message: str
     trip_id: Optional[int] = None
+    history: list[ChatTurn] = []
 
 
 class ChatResponse(BaseModel):

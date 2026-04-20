@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
-import { TripService } from '../services/trip.service';
+import { TripService, Trip } from '../services/trip.service';
 import { ChatStateService, ChatMessage, TripPlan, ChatSession } from '../services/chat-state.service';
 
 @Component({
@@ -29,6 +29,12 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   calendarStartDate = '';
   calendarSaving = false;
   pendingPlan: TripPlan | null = null;
+
+  // Trip picker inside the calendar modal
+  trips: Trip[] = [];
+  selectedTripId: number | 'new' | null = null;
+  newTripNameInput = '';
+  newTripDestinationInput = '';
 
   private _sub?: Subscription;
 
@@ -71,6 +77,11 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     const text = this.input.trim();
     if (!text || this.loading) return;
 
+    const history = this.messages.slice(-10).map(m => ({
+      role: m.role,
+      content: m.plan ? `Previous plan: ${JSON.stringify(m.plan)}` : m.text,
+    }));
+
     this.chatState.add({ role: 'user', text });
     this.input = '';
     this.loading = true;
@@ -79,6 +90,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this._sub = this.http.post<{ message: string }>('http://localhost:8000/api/chat', {
       message: text,
       trip_id: this.tripId,
+      history,
     }).subscribe({
       next: (res) => {
         this.handleResponse(res);
@@ -152,6 +164,13 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.pendingPlan = plan;
     this.calendarStartDate = '';
     this.calendarSaving = false;
+    this.selectedTripId = this.tripId;
+    this.newTripNameInput = plan.destination ? `Trip to ${plan.destination}` : '';
+    this.newTripDestinationInput = plan.destination || '';
+    this.tripSvc.listAllTrips().subscribe({
+      next: (ts) => { this.trips = ts; this.cdr.detectChanges(); },
+      error: () => {},
+    });
     this.showCalendarModal = true;
     this.cdr.detectChanges();
   }
@@ -164,15 +183,39 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   }
 
   addPlanToCalendar() {
-    if (!this.pendingPlan || !this.calendarStartDate || !this.tripId || this.calendarSaving) return;
+    if (!this.pendingPlan || !this.calendarStartDate || this.calendarSaving) return;
+
+    if (this.selectedTripId === 'new') {
+      if (!this.newTripNameInput.trim()) return;
+      this.calendarSaving = true;
+      this.cdr.detectChanges();
+      this.tripSvc.createTrip({
+        trip_name: this.newTripNameInput.trim(),
+        destination: this.newTripDestinationInput.trim() || undefined,
+      }).subscribe({
+        next: (t) => {
+          this.tripId = t.trip_id;
+          this._addPlanToTrip(t.trip_id);
+        },
+        error: () => {
+          this.calendarSaving = false;
+          this.chatState.add({ role: 'assistant', text: '❌ Could not create the trip. Please try again.' });
+          this.cdr.detectChanges();
+        },
+      });
+      return;
+    }
+
+    if (typeof this.selectedTripId !== 'number') return;
     this.calendarSaving = true;
     this.cdr.detectChanges();
+    this._addPlanToTrip(this.selectedTripId);
+  }
 
+  private _addPlanToTrip(tripId: number) {
     const start = new Date(this.calendarStartDate + 'T00:00:00');
-    const plan = this.pendingPlan;
-    const tripId = this.tripId;
+    const plan = this.pendingPlan!;
 
-    // Flatten to one entry per activity
     const entries: { title: string; date: string; start_time: string | null; end_time: string | null; location: string | null }[] = [];
     plan.days.forEach(day => {
       const d = new Date(start);
@@ -192,7 +235,6 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     let index = 0;
     const addNext = () => {
       if (index >= entries.length) {
-        // All calendar events done — add each activity as a bucket item too
         plan.days.forEach(day => {
           day.activities?.forEach(act => {
             this.tripSvc.createItem(tripId, {

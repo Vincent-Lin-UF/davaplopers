@@ -16,98 +16,227 @@
     </nav>
   </div>
 
+  <!-- Toast -->
+  <div *ngIf="toastMsg" class="fixed top-4 right-4 z-50 bg-neutral-700 text-white text-sm px-4 py-2 rounded-xl shadow-lg border border-neutral-600 transition">
+    {{ toastMsg }}
+  </div>
+
   <div class="flex-1 px-4 py-4">
-  <div class="max-w-7xl mx-auto h-full">
-    <!-- main layout -->
-    <div class="flex flex-col lg:flex-row gap-6 lg:items-stretch">
-      <!-- left sidebar bucket list -->
-      <div class="w-full lg:w-[340px] shrink-0 flex lg:self-stretch">
-        <div class="w-full flex flex-col">
-          <app-bucket-list [showNav]="false" (itemDropped)="dropToBucketList($event)" class="block w-full flex-1"></app-bucket-list>
-        </div>
-      </div>
+    <div class="max-w-7xl mx-auto h-full">
+      <div class="flex flex-col lg:flex-row gap-6 lg:items-stretch">
 
-      <!-- calendar -->
-      <div class="flex-1 w-full bg-neutral-800 rounded-2xl p-6 flex flex-col">
-        <!-- month nav -->
-        <div class="flex items-center justify-between mb-6">
-          <button
-            (click)="prevMonth()"
-            class="text-neutral-400 hover:text-white hover:bg-neutral-700 px-3 py-1 rounded-lg transition text-lg"
-          >
-            ‹
-          </button>
-
-          <span class="text-white font-bold text-lg">{{ monthLabel }}</span>
-
-          <button
-            (click)="nextMonth()"
-            class="text-neutral-400 hover:text-white hover:bg-neutral-700 px-3 py-1 rounded-lg transition text-lg"
-          >
-            ›
-          </button>
-        </div>
-
-        <!-- day-of-week header -->
-        <div class="grid grid-cols-7 mb-2">
-          <div
-            *ngFor="let d of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']"
-            class="text-center text-neutral-500 text-xs font-medium py-1"
-          >
-            {{ d }}
+        <!-- Left sidebar: bucket list -->
+        <div class="w-full lg:w-[340px] shrink-0 flex lg:self-stretch">
+          <div class="w-full flex flex-col">
+            <app-bucket-list [showNav]="false" (itemDropped)="dropToBucketList($event)" class="block w-full flex-1"></app-bucket-list>
           </div>
         </div>
 
-        <!-- day cells -->
-        <div class="grid grid-cols-7 gap-2 flex-1">
-          <div
-            *ngFor="let cell of days"
-            cdkDropList
-            [cdkDropListData]="cell"
-            [cdkDropListSortingDisabled]="true"
-            [cdkDropListEnterPredicate]="allowCalendarDrop"
-            (cdkDropListDropped)="dropOnDay($event, cell)"
-            (click)="selectDay(cell)"
-            class="rounded-xl p-2 min-h-24 cursor-pointer transition overflow-hidden"
-            [class.bg-neutral-700]="cell.inMonth && !isSelected(cell.date)"
-            [class.bg-yellow-400]="isSelected(cell.date)"
-            [class.bg-neutral-800]="!cell.inMonth && !isSelected(cell.date)"
-            [class.ring-2]="isToday(cell.date) && !isSelected(cell.date)"
-            [class.ring-yellow-400]="isToday(cell.date) && !isSelected(cell.date)"
-          >
-            <span
-              class="text-xs font-semibold"
-              [class.text-neutral-900]="isSelected(cell.date)"
-              [class.text-white]="!isSelected(cell.date) && cell.inMonth"
-              [class.text-neutral-600]="!isSelected(cell.date) && !cell.inMonth"
-            >
-              {{ cell.date.getDate() }}
-            </span>
+        <!-- Calendar -->
+        <div class="flex-1 w-full bg-neutral-800 rounded-2xl p-6 flex flex-col">
 
-            <div
-              *ngFor="let ev of cell.events"
-              cdkDrag
-              [cdkDragData]="ev"
-              cdkDragPreviewContainer="global"
-              class="mt-1 text-xs rounded px-1 py-0.5 truncate cursor-move z-50 relative"
-              [class.bg-neutral-900]="isSelected(cell.date)"
-              [class.text-yellow-400]="isSelected(cell.date)"
-              [class.bg-yellow-400]="!isSelected(cell.date)"
-              [class.text-neutral-900]="!isSelected(cell.date)"
-            >
-              <div *cdkDragPreview class="bucket-card-preview bg-neutral-700 rounded-lg px-3 py-2 flex items-center gap-3 border border-yellow-400 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.8)] z-[99999] pointer-events-none">
-                 <img [src]="ev.item.image" class="w-14 h-14 rounded-lg object-cover shrink-0" />
-                 <div class="min-w-0 flex-1">
-                   <h2 class="text-white text-sm font-semibold truncate">{{ ev.item.name }}</h2>
-                   <p class="text-neutral-400 text-[11px] truncate">{{ ev.item.location }}</p>
-                 </div>
-              </div>
-              {{ ev.item.name }}
+          <!-- Month nav + actions -->
+          <div class="flex items-center justify-between mb-6 flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+              <button (click)="prevMonth()" class="text-neutral-400 hover:text-white hover:bg-neutral-700 px-3 py-1 rounded-lg transition text-lg">‹</button>
+              <span class="text-white font-bold text-lg min-w-36 text-center">{{ monthLabel }}</span>
+              <button (click)="nextMonth()" class="text-neutral-400 hover:text-white hover:bg-neutral-700 px-3 py-1 rounded-lg transition text-lg">›</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button (click)="exportICS()" [disabled]="!tripId"
+                class="text-xs bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-neutral-900 font-bold px-3 py-1.5 rounded-lg transition">
+                ↓ Export .ics
+              </button>
+              <button (click)="openInviteModal()" [disabled]="!tripId"
+                class="text-xs bg-neutral-700 hover:bg-neutral-600 disabled:opacity-40 text-white font-bold px-3 py-1.5 rounded-lg transition">
+                ✉️ Invite
+              </button>
+              <button (click)="openInvitesList()" [disabled]="!tripId"
+                class="text-xs bg-neutral-700 hover:bg-neutral-600 disabled:opacity-40 text-white font-bold px-3 py-1.5 rounded-lg transition">
+                📋 View Invites
+              </button>
             </div>
           </div>
+
+          <!-- Day headers -->
+          <div class="grid grid-cols-7 mb-2">
+            <div *ngFor="let d of ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']"
+              class="text-center text-neutral-500 text-xs font-medium py-1">{{ d }}</div>
+          </div>
+
+          <!-- Day cells -->
+          <div class="grid grid-cols-7 gap-2 flex-1">
+            <div *ngFor="let cell of days"
+              cdkDropList
+              [cdkDropListData]="cell"
+              [cdkDropListSortingDisabled]="true"
+              [cdkDropListEnterPredicate]="allowCalendarDrop"
+              (cdkDropListDropped)="dropOnDay($event, cell)"
+              (click)="selectDay(cell)"
+              class="rounded-xl p-2 min-h-24 cursor-pointer transition overflow-hidden"
+              [class.bg-neutral-700]="cell.inMonth && !isSelected(cell.date)"
+              [class.bg-yellow-400]="isSelected(cell.date)"
+              [class.bg-neutral-800]="!cell.inMonth && !isSelected(cell.date)"
+              [class.ring-2]="isToday(cell.date) && !isSelected(cell.date)"
+              [class.ring-yellow-400]="isToday(cell.date) && !isSelected(cell.date)">
+
+              <span class="text-xs font-semibold"
+                [class.text-neutral-900]="isSelected(cell.date)"
+                [class.text-white]="!isSelected(cell.date) && cell.inMonth"
+                [class.text-neutral-600]="!isSelected(cell.date) && !cell.inMonth">
+                {{ cell.date.getDate() }}
+              </span>
+
+              <!-- Event chips — clickable -->
+              <div *ngFor="let ev of cell.events"
+                cdkDrag
+                [cdkDragData]="ev"
+                cdkDragPreviewContainer="global"
+                (click)="openEventModal(ev, $event)"
+                class="mt-1 text-xs rounded px-1 py-0.5 truncate cursor-pointer z-50 relative hover:opacity-80 transition"
+                [class.bg-neutral-900]="isSelected(cell.date)"
+                [class.text-yellow-400]="isSelected(cell.date)"
+                [class.bg-yellow-400]="!isSelected(cell.date)"
+                [class.text-neutral-900]="!isSelected(cell.date)"
+                title="Click to view / delete">
+
+                <div *cdkDragPreview class="bg-neutral-700 rounded-lg px-3 py-2 flex items-center gap-3 border border-yellow-400 shadow-xl z-50 pointer-events-none">
+                  <img [src]="ev.item.image" class="w-14 h-14 rounded-lg object-cover shrink-0" />
+                  <div class="min-w-0 flex-1">
+                    <h2 class="text-white text-sm font-semibold truncate">{{ ev.item.name }}</h2>
+                    <p class="text-neutral-400 text-xs truncate">{{ ev.item.location }}</p>
+                  </div>
+                </div>
+
+                <span *ngIf="ev.start_time" class="opacity-70 mr-0.5">{{ ev.start_time }}</span>{{ ev.item.name }}
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
   </div>
+</div>
+
+<!-- ── Time Picker Modal (shown after drag & drop) ────────────────────────── -->
+<div *ngIf="showTimePicker && pendingDrop" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
+    <h3 class="text-white text-lg font-bold mb-1">⏰ Set Event Time</h3>
+    <p class="text-yellow-400 text-sm font-medium mb-4">{{ pendingDrop.item.name }}</p>
+
+    <div class="flex gap-3 mb-6">
+      <div class="flex-1">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Start time</label>
+        <input [(ngModel)]="dropStartTime" type="time"
+          class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+      <div class="flex-1">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">End time</label>
+        <input [(ngModel)]="dropEndTime" type="time"
+          class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button (click)="cancelDrop()"
+        class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">
+        Cancel
+      </button>
+      <button (click)="confirmDrop()"
+        class="flex-1 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
+        Add to Calendar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Event Detail Modal ─────────────────────────────────────────────────── -->
+<div *ngIf="showEventModal && selectedEvent" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
+    <h3 class="text-white text-lg font-bold mb-1">{{ selectedEvent.item.name }}</h3>
+    <p class="text-neutral-400 text-sm mb-1">📅 {{ selectedEvent.date }}</p>
+    <p *ngIf="selectedEvent.start_time" class="text-yellow-400 text-sm mb-1">🕐 {{ selectedEvent.start_time }}<span *ngIf="selectedEvent.end_time"> → {{ selectedEvent.end_time }}</span></p>
+    <p *ngIf="selectedEvent.item.location" class="text-neutral-400 text-sm mb-5">📍 {{ selectedEvent.item.location }}</p>
+
+    <div class="flex gap-3 mt-4">
+      <button (click)="closeEventModal()"
+        class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">
+        Close
+      </button>
+      <button (click)="deleteSelectedEvent()"
+        class="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-xl transition">
+        🗑 Delete Event
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Send Invite Modal ──────────────────────────────────────────────────── -->
+<div *ngIf="showInviteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
+    <div *ngIf="inviteSuccess" class="text-center py-6">
+      <div class="text-4xl mb-3">✅</div>
+      <p class="text-white font-bold">Invite sent!</p>
+    </div>
+    <div *ngIf="!inviteSuccess">
+      <h3 class="text-white text-lg font-bold mb-1">✉️ Invite to Trip</h3>
+      <p class="text-neutral-400 text-sm mb-5">Share this trip with a teammate.</p>
+      <div class="mb-3">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Email address</label>
+        <input [(ngModel)]="inviteEmail" type="email" placeholder="teammate@ufl.edu"
+          class="w-full bg-neutral-700 text-white text-sm placeholder-neutral-500 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+      </div>
+      <div class="mb-6">
+        <label class="block text-neutral-400 text-xs font-medium mb-1.5">Permission</label>
+        <select [(ngModel)]="invitePermission"
+          class="w-full bg-neutral-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-yellow-400">
+          <option value="viewer">Viewer (can view only)</option>
+          <option value="editor">Editor (can edit)</option>
+        </select>
+      </div>
+      <p *ngIf="inviteError" class="text-red-400 text-xs mb-3">{{ inviteError }}</p>
+      <div class="flex gap-3">
+        <button (click)="closeInviteModal()" class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
+        <button (click)="sendInvite()" [disabled]="!inviteEmail.trim() || inviteSaving"
+          class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
+          {{ inviteSaving ? 'Sending...' : 'Send Invite' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── View Invites Modal ─────────────────────────────────────────────────── -->
+<div *ngIf="showInvitesListModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-md border border-neutral-700">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="text-white text-lg font-bold">📋 Sent Invites</h3>
+      <button (click)="closeInvitesList()" class="text-neutral-400 hover:text-white text-xl">✕</button>
+    </div>
+
+    <div *ngIf="invitesLoading" class="text-neutral-400 text-sm text-center py-6">Loading...</div>
+
+    <div *ngIf="!invitesLoading && invitesList.length === 0" class="text-neutral-400 text-sm text-center py-6">
+      No invites sent yet. Use the ✉️ Invite button to share this trip.
+    </div>
+
+    <div *ngIf="!invitesLoading && invitesList.length > 0" class="space-y-3">
+      <div *ngFor="let inv of invitesList" class="bg-neutral-700 rounded-xl px-4 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-white text-sm font-medium">{{ inv.invite_email }}</p>
+          <p class="text-neutral-400 text-xs">{{ inv.permission_level }} · Sent {{ inv.created_at | date:'mediumDate' }}</p>
+        </div>
+        <span class="text-xs font-bold px-2 py-1 rounded-full bg-neutral-600"
+          [class]="statusColor(inv.invite_status)">
+          {{ inv.invite_status }}
+        </span>
+      </div>
+    </div>
+
+    <button (click)="openInviteModal()" class="w-full mt-5 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
+      ✉️ Send New Invite
+    </button>
   </div>
 </div>

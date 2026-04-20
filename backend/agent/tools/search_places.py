@@ -159,7 +159,10 @@ class SearchPlacesTool(Tool):
             "X-Goog-FieldMask": FIELD_MASK,
         }
 
-        resp = requests.post(SEARCH_URL, json=body, headers=headers)
+        try:
+            resp = requests.post(SEARCH_URL, json=body, headers=headers, timeout=5)
+        except Exception:
+            return []
         if resp.status_code != 200:
             return []
 

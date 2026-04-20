@@ -63,6 +63,27 @@ export class TripService {
   private _set(id: number) { this._tripId = id; localStorage.setItem('current_trip_id', String(id)); }
   clearTrip() { this._tripId = null; this._itemsCache = null; this._eventsCache = null; localStorage.removeItem('current_trip_id'); }
 
+  listAllTrips(): Observable<Trip[]> {
+    return this.http.get<Trip[]>(`${this.base}/trips`);
+  }
+
+  setCurrentTrip(id: number) {
+    this._tripId = id;
+    localStorage.setItem('current_trip_id', String(id));
+    this._itemsCache = null;
+    this._eventsCache = null;
+  }
+
+  createTrip(body: { trip_name?: string; destination?: string }): Observable<Trip> {
+    return this.http.post<Trip>(`${this.base}/trips`, body).pipe(
+      tap(t => this.setCurrentTrip(t.trip_id))
+    );
+  }
+
+  updateCurrentTrip(body: any): Observable<Trip> {
+    return this.http.patch<Trip>(`${this.base}/trips/${this._tripId}`, body);
+  }
+
  
 
   listItems(tripId: number, forceRefresh = false): Observable<BucketItemOut[]> {

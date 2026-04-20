@@ -5,7 +5,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { DragDropModule, CdkDragDrop, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { HttpClient } from '@angular/common/http';
 import { BucketList, BucketItem } from '../bucket-list/bucket-list';
-import { TripService, CalendarEventOut } from '../services/trip.service';
+import { TripService, CalendarEventOut, Trip } from '../services/trip.service';
 import * as L from 'leaflet';
 
 interface CalEvent {
@@ -63,6 +63,24 @@ export class CalendarComponent implements OnInit, OnDestroy {
   invitesList: any[] = [];
   invitesLoading = false;
 
+  // Trip switcher
+  trips: Trip[] = [];
+  showTripMenu = false;
+  get currentTripName(): string {
+    const t = this.trips.find(x => x.trip_id === this.tripId);
+    return t?.trip_name || 'My Trip';
+  }
+
+  // Trip modals
+  showNewTripModal = false;
+  newTripNameInput = '';
+  newTripDestinationInput = '';
+  showRenameTripModal = false;
+  renameTripInput = '';
+  showDestinationModal = false;
+  destinationInput = '';
+  tripSaving = false;
+
   // Map
   tripDestination = '';
   private _leaflet: L.Map | null = null;
@@ -79,6 +97,10 @@ export class CalendarComponent implements OnInit, OnDestroy {
       next: (id) => {
         this.tripId = id;
         this._load();
+        this.tripSvc.listAllTrips().subscribe({
+          next: (ts) => { this.trips = ts; this.cdr.detectChanges(); },
+          error: () => {},
+        });
         this.tripSvc.listInvites(id).subscribe({
           next: (list) => { this.invitesList = list; },
           error: () => {},
@@ -421,6 +443,67 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
   prevMonth() { this.current = new Date(this.current.getFullYear(), this.current.getMonth() - 1, 1); this.generateDays(); }
   nextMonth() { this.current = new Date(this.current.getFullYear(), this.current.getMonth() + 1, 1); this.generateDays(); }
+
+  // ── Trip switcher ─────────────────────────────────────────────────────────
+
+  switchTrip(trip: Trip) {
+    this.showTripMenu = false;
+    if (trip.trip_id === this.tripId) return;
+    this.tripSvc.setCurrentTrip(trip.trip_id);
+    window.location.reload();
+  }
+
+  createNewTrip() {
+    this.showTripMenu = false;
+    this.newTripNameInput = '';
+    this.newTripDestinationInput = '';
+    this.tripSaving = false;
+    this.showNewTripModal = true;
+  }
+  closeNewTripModal() { this.showNewTripModal = false; }
+  confirmNewTrip() {
+    if (!this.newTripNameInput.trim() || this.tripSaving) return;
+    this.tripSaving = true;
+    this.tripSvc.createTrip({
+      trip_name: this.newTripNameInput.trim(),
+      destination: this.newTripDestinationInput.trim() || undefined,
+    }).subscribe({
+      next: () => window.location.reload(),
+      error: () => { this.tripSaving = false; this.showToast("Couldn't create trip."); this.cdr.detectChanges(); },
+    });
+  }
+
+  renameTrip() {
+    this.showTripMenu = false;
+    this.renameTripInput = this.currentTripName;
+    this.tripSaving = false;
+    this.showRenameTripModal = true;
+  }
+  closeRenameTripModal() { this.showRenameTripModal = false; }
+  confirmRenameTrip() {
+    if (!this.renameTripInput.trim() || this.tripSaving) return;
+    this.tripSaving = true;
+    this.tripSvc.updateCurrentTrip({ trip_name: this.renameTripInput.trim() }).subscribe({
+      next: () => window.location.reload(),
+      error: () => { this.tripSaving = false; this.showToast("Couldn't rename. You may not have permission."); this.cdr.detectChanges(); },
+    });
+  }
+
+  setDestination() {
+    this.showTripMenu = false;
+    this.destinationInput = this.tripDestination;
+    this.tripSaving = false;
+    this.showDestinationModal = true;
+  }
+  closeDestinationModal() { this.showDestinationModal = false; }
+  confirmDestination() {
+    if (this.tripSaving) return;
+    this.tripSaving = true;
+    this.tripSvc.updateCurrentTrip({ destination: this.destinationInput.trim() }).subscribe({
+      next: () => window.location.reload(),
+      error: () => { this.tripSaving = false; this.showToast("Couldn't update. You may not have permission."); this.cdr.detectChanges(); },
+    });
+  }
 
   private fmt(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;

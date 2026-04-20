@@ -13,8 +13,10 @@ class Orchestrator:
         self.tools = tools
 
     async def handle(self, request: ChatRequest) -> ChatResponse:
+        history = [{"role": t.role, "content": t.content} for t in request.history]
+
         # gets structured constraints from user input
-        constraints = await parse_constraints(request.message, self.llm)
+        constraints = await parse_constraints(request.message, self.llm, history)
 
         # tool calls from structured constraints
         raw_results = []
@@ -44,4 +46,4 @@ class Orchestrator:
         recommendations = normalize(raw_results)
         ranked = rank(recommendations, constraints)
 
-        return await format_response(ranked, request.message, constraints, self.llm)
+        return await format_response(ranked, request.message, constraints, self.llm, history)

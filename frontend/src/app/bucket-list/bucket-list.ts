@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -38,7 +38,16 @@ export class BucketList implements OnInit {
   bucketList: BucketItem[] = [];
   newItem: BucketItem = { name: '', location: '', priority: '', activityTypes: [], image: '' };
 
-  constructor(private tripSvc: TripService) {}
+  toastMsg = '';
+  private toastTimeout: any;
+
+  constructor(private tripSvc: TripService, private cdr: ChangeDetectorRef) {}
+
+  showToast(msg: string) {
+    this.toastMsg = msg;
+    clearTimeout(this.toastTimeout);
+    this.toastTimeout = setTimeout(() => { this.toastMsg = ''; this.cdr.detectChanges(); }, 2000);
+  }
 
   ngOnInit() {
     this.tripSvc.getOrCreateTrip().subscribe({
@@ -146,7 +155,7 @@ export class BucketList implements OnInit {
     if (item.item_id && this.tripId) {
       this.tripSvc.deleteItem(this.tripId, item.item_id).subscribe({
         next: () => { this._splice(index); this.itemDeleted.emit(item); },
-        error: () => { alert("Couldn't delete this item. You may not have permission."); },
+        error: () => { this.showToast("Couldn't delete — you may not have permission."); },
       });
     } else {
       this._splice(index);

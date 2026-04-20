@@ -86,6 +86,7 @@ async def format_response(
     message: str,
     constraints: TripConstraints,
     llm: LLMProvider,
+    history: list[dict] | None = None,
 ) -> ChatResponse:
     num_days = _extract_day_count(message)
     rec_text = "\n".join(
@@ -96,8 +97,9 @@ async def format_response(
     messages = [
         {
             "role": "system",
-            "content": "You are PlanCation travel planner. Always respond with valid JSON only. No markdown, no code blocks. Generate ALL requested days.",
+            "content": "You are PlanCation travel planner. Always respond with valid JSON only. No markdown, no code blocks. Generate ALL requested days. Use the prior conversation to refine plans across turns (e.g. if the user asks to make a prior plan cheaper, adjust that plan).",
         },
+        *(history or []),
         {
             "role": "user",
             "content": FORMAT_PROMPT.format(

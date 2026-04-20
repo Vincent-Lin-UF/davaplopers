@@ -23,6 +23,7 @@ export interface BucketItem {
 export class BucketList implements OnInit {
   @Input() showNav = true;
   @Output() itemDropped = new EventEmitter<CdkDragDrop<any>>();
+  @Output() itemDeleted = new EventEmitter<BucketItem>();
 
   tripId: number | null = null;
   showForm = false;
@@ -144,9 +145,13 @@ export class BucketList implements OnInit {
     const item = this.bucketList[index];
     if (item.item_id && this.tripId) {
       this.tripSvc.deleteItem(this.tripId, item.item_id).subscribe({
-        next: () => this._splice(index), error: () => this._splice(index),
+        next: () => { this._splice(index); this.itemDeleted.emit(item); },
+        error: () => { this._splice(index); this.itemDeleted.emit(item); },
       });
-    } else { this._splice(index); }
+    } else {
+      this._splice(index);
+      this.itemDeleted.emit(item);
+    }
   }
 
   private _splice(index: number) {

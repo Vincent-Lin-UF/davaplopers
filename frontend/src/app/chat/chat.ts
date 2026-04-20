@@ -171,36 +171,56 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     const start = new Date(this.calendarStartDate + 'T00:00:00');
     const plan = this.pendingPlan;
     const tripId = this.tripId;
-    const days = [...plan.days];
-    let index = 0;
 
+    // Flatten to one entry per activity
+    const entries: { title: string; date: string; start_time: string | null; end_time: string | null; location: string | null }[] = [];
+    plan.days.forEach(day => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + day.day - 1);
+      const dateStr = d.toISOString().split('T')[0];
+      (day.activities || []).forEach(act => {
+        entries.push({
+          title: act.activity,
+          date: dateStr,
+          start_time: act.time || null,
+          end_time: act.end_time || null,
+          location: act.location || null,
+        });
+      });
+    });
+
+    let index = 0;
     const addNext = () => {
-      if (index >= days.length) {
-        // All done
+      if (index >= entries.length) {
+        // All calendar events done — add each activity as a bucket item too
+        plan.days.forEach(day => {
+          day.activities?.forEach(act => {
+            this.tripSvc.createItem(tripId, {
+              title: act.activity,
+              location_name: act.location || null,
+              category: 'Travel',
+              priority: 'medium',
+            }).subscribe();
+          });
+        });
         this.calendarSaving = false;
         this.showCalendarModal = false;
         this.pendingPlan = null;
         this.chatState.add({
           role: 'assistant',
-          text: `✅ Added all ${days.length} days to your calendar! Head to the Calendar tab to see them.`
+          text: `✅ Added ${entries.length} activities to your calendar and bucket list!`,
         });
         this.cdr.detectChanges();
         return;
       }
 
-      const day = days[index++];
-      const date = new Date(start);
-      date.setDate(start.getDate() + day.day - 1);
-      const dateStr = date.toISOString().split('T')[0];
-      const firstAct = day.activities?.[0];
-      const lastAct = day.activities?.[day.activities.length - 1];
-
+      const entry = entries[index++];
       this.http.post<any>(`http://localhost:8000/api/trips/${tripId}/events`, {
-        title: `Day ${day.day}: ${day.title}`,
-        event_date: dateStr,
-        start_time: firstAct?.time || null,
-        end_time: lastAct?.end_time || null,
-        location_name: firstAct?.location || plan.destination,
+        title: entry.title,
+        event_date: entry.date,
+        start_time: entry.start_time,
+        end_time: entry.end_time,
+        location_name: entry.location,
       }).subscribe({
         next: () => { this.cdr.detectChanges(); addNext(); },
         error: () => { this.cdr.detectChanges(); addNext(); },

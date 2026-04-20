@@ -121,6 +121,10 @@ export class TripService {
   }
 
   
+  getTripDetails(tripId: number): Observable<Trip> {
+    return this.http.get<Trip>(`${this.base}/trips/${tripId}`);
+  }
+
   createInvite(tripId: number, email: string, permission: string = 'viewer'): Observable<any> {
     return this.http.post(`${this.base}/trips/${tripId}/invites`, { invite_email: email, permission_level: permission });
   }

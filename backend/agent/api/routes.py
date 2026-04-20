@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from agent.api.deps import get_current_user
@@ -15,6 +16,7 @@ from agent.tools.search_places import SearchPlacesTool
 import agent.services.trips as trip_svc
 import agent.services.bucket_items as item_svc
 import agent.services.calendar_events as event_svc
+from agent.services.email import send_invite_email
 from db.connection import execute, execute_one, execute_write
 
 router = APIRouter()
@@ -148,17 +150,32 @@ async def export_ics(trip_id: int, user: dict = Depends(get_current_user)):
 async def list_invites(trip_id: int, user: dict = Depends(get_current_user)):
     await _require_trip(trip_id, user["user_id"])
     rows = await execute("SELECT * FROM shared_invites WHERE trip_id=%s ORDER BY created_at DESC", (trip_id,))
-    return [dict(r) for r in rows]
+    seen: set[str] = set()
+    unique = []
+    for r in rows:
+        d = dict(r)
+        if d["invite_email"] not in seen:
+            seen.add(d["invite_email"])
+            unique.append(d)
+    return unique
 
 
 @router.post("/trips/{trip_id}/invites", response_model=InviteOut, status_code=201)
 async def create_invite(trip_id: int, body: InviteCreate, user: dict = Depends(get_current_user)):
-    await _require_trip(trip_id, user["user_id"])
+    trip = await _require_trip(trip_id, user["user_id"])
+    existing = await execute_one(
+        "SELECT * FROM shared_invites WHERE trip_id=%s AND invite_email=%s",
+        (trip_id, body.invite_email),
+    )
+    if existing:
+        return dict(existing)
     inv_id = await execute_write(
         "INSERT INTO shared_invites (trip_id, invite_email, permission_level) VALUES (%s,%s,%s)",
         (trip_id, body.invite_email, body.permission_level),
     )
     row = await execute_one("SELECT * FROM shared_invites WHERE invite_id=%s", (inv_id,))
+    trip_name = trip.get("trip_name") or trip.get("destination") or "our trip"
+    asyncio.create_task(send_invite_email(body.invite_email, user["email"], trip_name))
     return dict(row)
 
 

@@ -1,10 +1,12 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { DragDropModule, CdkDragDrop, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
+import { HttpClient } from '@angular/common/http';
 import { BucketList, BucketItem } from '../bucket-list/bucket-list';
 import { TripService, CalendarEventOut } from '../services/trip.service';
+import * as L from 'leaflet';
 
 interface CalEvent {
   event_id?: number;
@@ -27,7 +29,7 @@ interface DayCell {
   imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, DragDropModule, BucketList],
   templateUrl: './calendar.html',
 })
-export class CalendarComponent implements OnInit {
+export class CalendarComponent implements OnInit, OnDestroy {
   @ViewChild(BucketList) bucketListComponent!: BucketList;
 
   today = new Date();
@@ -61,23 +63,91 @@ export class CalendarComponent implements OnInit {
   invitesList: any[] = [];
   invitesLoading = false;
 
+  // Map
+  tripDestination = '';
+  private _leaflet: L.Map | null = null;
+
   // Toast
   toastMsg = '';
   toastTimeout: any;
 
-  constructor(private tripSvc: TripService) {}
+  constructor(private tripSvc: TripService, private cdr: ChangeDetectorRef, private http: HttpClient) {}
 
   ngOnInit() {
     this.generateDays();
     this.tripSvc.getOrCreateTrip().subscribe({
-      next: (id) => { this.tripId = id; this._load(); },
+      next: (id) => {
+        this.tripId = id;
+        this._load();
+        this.tripSvc.listInvites(id).subscribe({
+          next: (list) => { this.invitesList = list; },
+          error: () => {},
+        });
+        this.tripSvc.getTripDetails(id).subscribe(trip => {
+          if (trip.destination) {
+            this.tripDestination = trip.destination;
+            this._geocodeAndInitMap(trip.destination);
+          } else {
+            this._initMap(20, 0, 2);
+          }
+        });
+      },
       error: () => {},
     });
   }
 
+  ngOnDestroy() {
+    if (this._leaflet) { this._leaflet.remove(); this._leaflet = null; }
+  }
+
+  private _geocodeAndInitMap(location: string) {
+    const parts = location.split(',').map(p => p.trim()).filter(Boolean);
+    // Build queries from most to least specific by dropping leading parts
+    const queries = parts.map((_, i) => parts.slice(i).join(', '));
+    this._tryGeocode(queries, 0);
+  }
+
+  private _tryGeocode(queries: string[], index: number) {
+    if (index >= queries.length) { this._initMap(20, 0, 2); return; }
+    this.http.get<any[]>(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queries[index])}&format=json&limit=1`
+    ).subscribe({
+      next: (results) => {
+        if (results.length) {
+          // Zoom out slightly the more specific parts we had to drop
+          const zoom = Math.max(11, 16 - index * 2);
+          this._initMap(+results[0].lat, +results[0].lon, zoom);
+        } else {
+          this._tryGeocode(queries, index + 1);
+        }
+      },
+      error: () => this._tryGeocode(queries, index + 1),
+    });
+  }
+
+  private _initMap(lat: number, lon: number, zoom: number) {
+    setTimeout(() => {
+      if (this._leaflet) { this._leaflet.remove(); this._leaflet = null; }
+      const el = document.getElementById('trip-map');
+      if (!el) return;
+      const icon = L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+      });
+      this._leaflet = L.map('trip-map').setView([lat, lon], zoom);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(this._leaflet);
+      if (zoom > 2) L.marker([lat, lon], { icon }).addTo(this._leaflet);
+    }, 100);
+  }
+
   private _load() {
     if (!this.tripId) return;
-    this.tripSvc.listEvents(this.tripId).subscribe({
+    this.tripSvc.listEvents(this.tripId, true).subscribe({
       next: (rows) => {
           this.events = rows.map(r => this._map(r));
           this._sortAndGenerate();
@@ -108,7 +178,7 @@ export class CalendarComponent implements OnInit {
   showToast(msg: string) {
     this.toastMsg = msg;
     clearTimeout(this.toastTimeout);
-    this.toastTimeout = setTimeout(() => { this.toastMsg = ''; }, 3000);
+    this.toastTimeout = setTimeout(() => { this.toastMsg = ''; this.cdr.detectChanges(); }, 1500);
   }
 
   // ── Calendar grid ─────────────────────────────────────────────────────────
@@ -155,6 +225,11 @@ export class CalendarComponent implements OnInit {
 
   closeEventModal() { this.showEventModal = false; this.selectedEvent = null; }
 
+  flyToLocation(location: string) {
+    this.closeEventModal();
+    this._geocodeAndInitMap(location);
+  }
+
   deleteSelectedEvent() {
     if (!this.selectedEvent || !this.tripId) return;
     const ev = this.selectedEvent;
@@ -172,7 +247,29 @@ export class CalendarComponent implements OnInit {
   private _removeEvent(ev: CalEvent) {
     this.events = this.events.filter(e => e !== ev);
     this.generateDays();
-    if (this.bucketListComponent) this.bucketListComponent.bucketList.push(ev.item);
+    if (!this.bucketListComponent) return;
+    const idx = ev.item.item_id
+      ? this.bucketListComponent.bucketList.findIndex(i => i.item_id === ev.item.item_id)
+      : this.bucketListComponent.bucketList.findIndex(i => i.name === ev.item.name);
+    if (idx !== -1) {
+      const matched = this.bucketListComponent.bucketList[idx];
+      this.bucketListComponent.bucketList.splice(idx, 1);
+      if (this.tripId && matched.item_id) this.tripSvc.deleteItem(this.tripId, matched.item_id).subscribe();
+    } else if (this.tripId && ev.item.item_id) {
+      this.tripSvc.deleteItem(this.tripId, ev.item.item_id).subscribe();
+    }
+  }
+
+  onBucketItemDeleted(item: BucketItem) {
+    const matches = (e: CalEvent) =>
+      (item.item_id && e.item.item_id && e.item.item_id === item.item_id) ||
+      e.item.name === item.name;
+    const toDelete = this.events.filter(matches);
+    toDelete.forEach(ev => {
+      if (ev.event_id && this.tripId) this.tripSvc.deleteEvent(this.tripId, ev.event_id).subscribe();
+    });
+    this.events = this.events.filter(e => !matches(e));
+    this.generateDays();
   }
 
   // ── Drag & Drop ───────────────────────────────────────────────────────────
@@ -283,22 +380,24 @@ export class CalendarComponent implements OnInit {
 
   sendInvite() {
     if (!this.inviteEmail.trim() || !this.tripId || this.inviteSaving) return;
-    this.inviteSaving = true; this.inviteError = '';
-    this.tripSvc.createInvite(this.tripId, this.inviteEmail.trim(), this.invitePermission).subscribe({
-      next: () => { this.inviteSaving = false; this.inviteSuccess = true; setTimeout(() => this.closeInviteModal(), 2000); },
-      error: () => { this.inviteSaving = false; this.inviteError = 'Failed. Check the email and try again.'; },
-    });
+    this.inviteSaving = true;
+    this.tripSvc.createInvite(this.tripId, this.inviteEmail.trim(), this.invitePermission).subscribe();
+    this.closeInviteModal();
+    this.showToast('Email sent! If that address exists, they\'ll receive an invite.');
   }
 
   // ── View Invites ──────────────────────────────────────────────────────────
 
   openInvitesList() {
     this.showInvitesListModal = true;
-    this.invitesLoading = true;
-    this.invitesList = [];
-    if (!this.tripId) { this.invitesLoading = false; return; }
-    this.tripSvc.listInvites(this.tripId).subscribe({
-      next: (list) => { this.invitesList = list; this.invitesLoading = false; },
+    this.invitesLoading = this.invitesList.length === 0;
+    this.tripSvc.getOrCreateTrip().subscribe({
+      next: (id) => {
+        this.tripSvc.listInvites(id).subscribe({
+          next: (list) => { this.invitesList = list; this.invitesLoading = false; },
+          error: () => { this.invitesLoading = false; },
+        });
+      },
       error: () => { this.invitesLoading = false; },
     });
   }

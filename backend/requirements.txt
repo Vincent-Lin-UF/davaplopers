@@ -8,3 +8,4 @@ requests
 bcrypt
 email-validator
 python-jose[cryptography]
+aiosmtplib

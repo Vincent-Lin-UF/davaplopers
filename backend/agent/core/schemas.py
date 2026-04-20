@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 from pydantic import BaseModel, EmailStr
 
 class TripConstraints(BaseModel):
@@ -155,3 +155,4 @@ class InviteOut(BaseModel):
     invite_email: str
     permission_level: str
     invite_status: str
+    created_at: Optional[datetime] = None

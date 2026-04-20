@@ -173,10 +173,10 @@
               </ul>
             </div>
 
-            <!-- Add to Calendar -->
+            <!-- Add to Calendar + Bucket List -->
             <button (click)="openCalendarModal(msg.plan)"
               class="w-full bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-sm py-3 rounded-2xl transition">
-              📅 Add This Trip to Calendar
+              📅 Add to Calendar & Bucket List
             </button>
 
           </div>
@@ -240,7 +240,7 @@
         class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
       <button (click)="addPlanToCalendar()" [disabled]="!calendarStartDate || calendarSaving"
         class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
-        {{ calendarSaving ? 'Adding...' : 'Add to Calendar' }}
+        {{ calendarSaving ? 'Adding...' : 'Add to Both' }}
       </button>
     </div>
   </div>

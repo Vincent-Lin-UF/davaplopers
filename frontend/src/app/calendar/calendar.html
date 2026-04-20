@@ -130,7 +130,7 @@
 </div>
 
 <!-- ── Time Picker Modal (shown after drag & drop) ────────────────────────── -->
-<div *ngIf="showTimePicker && pendingDrop" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+<div *ngIf="showTimePicker && pendingDrop" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
     <h3 class="text-white text-lg font-bold mb-1">⏰ Set Event Time</h3>
     <p class="text-yellow-400 text-sm font-medium mb-4">{{ pendingDrop.item.name }}</p>
@@ -162,7 +162,7 @@
 </div>
 
 <!-- ── Event Detail Modal ─────────────────────────────────────────────────── -->
-<div *ngIf="showEventModal && selectedEvent" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+<div *ngIf="showEventModal && selectedEvent" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
     <h3 class="text-white text-lg font-bold mb-1">{{ selectedEvent.item.name }}</h3>
     <p class="text-neutral-400 text-sm mb-1">📅 {{ selectedEvent.date }}</p>
@@ -188,7 +188,7 @@
 </div>
 
 <!-- ── Send Invite Modal ──────────────────────────────────────────────────── -->
-<div *ngIf="showInviteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+<div *ngIf="showInviteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
     <div *ngIf="inviteSuccess" class="text-center py-6">
       <div class="text-4xl mb-3">✅</div>
@@ -224,7 +224,7 @@
 </div>
 
 <!-- ── View Invites Modal ─────────────────────────────────────────────────── -->
-<div *ngIf="showInvitesListModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+<div *ngIf="showInvitesListModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-md border border-neutral-700">
     <div class="flex items-center justify-between mb-5">
       <h3 class="text-white text-lg font-bold">📋 Sent Invites</h3>

@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from agent.api.routes import router
 from agent.api.auth import router as auth_router
-from agent.core.config import ALLOWED_ORIGINS
 from db.connection import get_pool, close_pool
 
 
@@ -16,9 +15,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Matches any Vercel deployment URL (including preview builds) and local dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:4200",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

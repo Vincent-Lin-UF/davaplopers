@@ -168,14 +168,16 @@ async def create_invite(trip_id: int, body: InviteCreate, user: dict = Depends(g
         (trip_id, body.invite_email),
     )
     if existing:
-        return dict(existing)
-    inv_id = await execute_write(
-        "INSERT INTO shared_invites (trip_id, invite_email, permission_level) VALUES (%s,%s,%s)",
-        (trip_id, body.invite_email, body.permission_level),
-    )
-    row = await execute_one("SELECT * FROM shared_invites WHERE invite_id=%s", (inv_id,))
+        row = existing
+    else:
+        inv_id = await execute_write(
+            "INSERT INTO shared_invites (trip_id, invite_email, permission_level) VALUES (%s,%s,%s)",
+            (trip_id, body.invite_email, body.permission_level),
+        )
+        row = await execute_one("SELECT * FROM shared_invites WHERE invite_id=%s", (inv_id,))
     trip_name = trip.get("trip_name") or trip.get("destination") or "our trip"
-    asyncio.create_task(send_invite_email(body.invite_email, user["email"], trip_name))
+    ok = await send_invite_email(body.invite_email, user["email"], trip_name)
+    print(f"[create_invite] send_invite_email returned {ok}")
     return dict(row)
 
 

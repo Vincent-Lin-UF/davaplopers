@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 interface InviteView {
   invite_email: string;
@@ -38,7 +39,7 @@ export class InviteComponent implements OnInit {
     this.token = this.route.snapshot.paramMap.get('token') || '';
     if (!this.token) { this.router.navigate(['/']); return; }
 
-    this.http.get<InviteView>(`http://localhost:8000/api/invites/by-token/${this.token}`).subscribe({
+    this.http.get<InviteView>(`${environment.apiBase}/api/invites/by-token/${this.token}`).subscribe({
       next: (inv) => { this.invite = inv; this.loading = false; this.cdr.detectChanges(); },
       error: () => { this.error = 'Invite not found or expired.'; this.loading = false; this.cdr.detectChanges(); },
     });
@@ -64,7 +65,7 @@ export class InviteComponent implements OnInit {
   respond(status: 'accepted' | 'declined') {
     if (this.submitting || !this.invite) return;
     this.submitting = true;
-    this.http.post(`http://localhost:8000/api/invites/by-token/${this.token}/respond`, { status }).subscribe({
+    this.http.post(`${environment.apiBase}/api/invites/by-token/${this.token}/respond`, { status }).subscribe({
       next: () => { this.done = status; this.submitting = false; this.cdr.detectChanges(); },
       error: (err) => {
         this.error = err?.error?.detail || 'Could not respond to the invite.';

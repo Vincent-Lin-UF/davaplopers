@@ -6,6 +6,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TripService } from '../services/trip.service';
 import { ChatStateService, ChatMessage, TripPlan, ChatSession } from '../services/chat-state.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-chat',
@@ -76,7 +77,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.loading = true;
     this.cdr.detectChanges();
 
-    this._sub = this.http.post<{ message: string }>('http://localhost:8000/api/chat', {
+    this._sub = this.http.post<{ message: string }>(`${environment.apiBase}/api/chat`, {
       message: text,
       trip_id: this.tripId,
     }).subscribe({
@@ -215,7 +216,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       }
 
       const entry = entries[index++];
-      this.http.post<any>(`http://localhost:8000/api/trips/${tripId}/events`, {
+      this.http.post<any>(`${environment.apiBase}/api/trips/${tripId}/events`, {
         title: entry.title,
         event_date: entry.date,
         start_time: entry.start_time,

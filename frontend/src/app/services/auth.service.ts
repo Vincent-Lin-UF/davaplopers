@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface SignupPayload { name: string; email: string; password: string; }
 export interface SignupResponse { user_id: number; name: string; email: string; }
@@ -9,7 +10,7 @@ export interface LoginResponse { access_token: string; token_type: string; user_
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private base = 'http://localhost:8000/api/auth';
+  private base = `${environment.apiBase}/api/auth`;
   constructor(private http: HttpClient) {}
 
   signup(payload: SignupPayload): Observable<SignupResponse> {

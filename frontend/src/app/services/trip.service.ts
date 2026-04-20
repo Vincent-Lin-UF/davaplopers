@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, switchMap, tap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Trip {
   trip_id: number;
@@ -35,7 +36,7 @@ export interface CalendarEventOut {
 
 @Injectable({ providedIn: 'root' })
 export class TripService {
-  private base = 'http://localhost:8000/api';
+  private base = `${environment.apiBase}/api`;
   private _tripId: number | null = null;
 
 

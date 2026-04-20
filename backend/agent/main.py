@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from agent.api.routes import router
 from agent.api.auth import router as auth_router
+from agent.core.config import ALLOWED_ORIGINS
 from db.connection import get_pool, close_pool
 
 
@@ -15,10 +16,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Change later -> right now it is allowing everything
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

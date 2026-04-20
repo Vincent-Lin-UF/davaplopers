@@ -38,7 +38,13 @@ async def signup(request: SignupRequest):
         (request.name, request.email, hashed)
     )
 
-    return SignupResponse(user_id=user_id, name=request.name, email=request.email)
+    token = create_access_token(user_id, request.email)
+    return SignupResponse(
+        access_token=token,
+        user_id=user_id,
+        name=request.name,
+        email=request.email,
+    )
 
 
 @router.post("/login", response_model=LoginResponse)

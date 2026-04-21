@@ -50,6 +50,10 @@ export class BucketList implements OnInit {
   isOwner = false;
   loading = true;
 
+  // Delete-confirm modal
+  showDeleteModal = false;
+  private _pendingDeleteIndex: number | null = null;
+
   constructor(
     private tripSvc: TripService,
     private cdr: ChangeDetectorRef,
@@ -214,8 +218,26 @@ export class BucketList implements OnInit {
   }
 
   deleteItem(index: number): void {
+    this._pendingDeleteIndex = index;
+    this.showDeleteModal = true;
+    this.cdr.detectChanges();
+  }
+
+  get pendingDeleteItem(): BucketItem | null {
+    return this._pendingDeleteIndex !== null ? this.bucketList[this._pendingDeleteIndex] : null;
+  }
+
+  cancelDelete() {
+    this.showDeleteModal = false;
+    this._pendingDeleteIndex = null;
+  }
+
+  confirmDelete() {
+    const index = this._pendingDeleteIndex;
+    this.showDeleteModal = false;
+    this._pendingDeleteIndex = null;
+    if (index === null) return;
     const item = this.bucketList[index];
-    if (!confirm(`Delete "${item.name}" from your bucket list?`)) return;
     const tripId = item.trip_id || this.tripId;
     if (item.item_id && tripId) {
       this.tripSvc.deleteItem(tripId, item.item_id).subscribe({

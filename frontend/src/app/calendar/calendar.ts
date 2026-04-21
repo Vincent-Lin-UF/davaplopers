@@ -96,6 +96,34 @@ export class CalendarComponent implements OnInit, OnDestroy {
   // Loading
   loading = true;
 
+  // Generic confirmation modal
+  showConfirmModal = false;
+  confirmTitle = '';
+  confirmMessage = '';
+  confirmButtonLabel = 'Delete';
+  private _confirmCallback: (() => void) | null = null;
+
+  openConfirm(title: string, message: string, buttonLabel: string, callback: () => void) {
+    this.confirmTitle = title;
+    this.confirmMessage = message;
+    this.confirmButtonLabel = buttonLabel;
+    this._confirmCallback = callback;
+    this.showConfirmModal = true;
+    this.cdr.detectChanges();
+  }
+
+  cancelConfirm() {
+    this.showConfirmModal = false;
+    this._confirmCallback = null;
+  }
+
+  runConfirm() {
+    const cb = this._confirmCallback;
+    this.showConfirmModal = false;
+    this._confirmCallback = null;
+    if (cb) cb();
+  }
+
   constructor(
     private tripSvc: TripService,
     private cdr: ChangeDetectorRef,
@@ -281,16 +309,22 @@ export class CalendarComponent implements OnInit, OnDestroy {
   deleteSelectedEvent() {
     if (!this.selectedEvent || !this.tripId) return;
     const ev = this.selectedEvent;
-    if (!confirm(`Delete "${ev.item.name}"?`)) return;
-    if (ev.event_id) {
-      this.tripSvc.deleteEvent(this.tripId, ev.event_id).subscribe({
-        next: () => { this._removeEvent(ev); this.showToast('Event deleted'); },
-        error: () => { this.showToast("Couldn't delete — check permissions"); },
-      });
-    } else {
-      this._removeEvent(ev);
-    }
     this.closeEventModal();
+    this.openConfirm(
+      'Delete event?',
+      `"${ev.item.name}" will be removed from your calendar. This can't be undone.`,
+      'Delete',
+      () => {
+        if (ev.event_id) {
+          this.tripSvc.deleteEvent(this.tripId!, ev.event_id).subscribe({
+            next: () => { this._removeEvent(ev); this.showToast('Event deleted'); },
+            error: () => { this.showToast("Couldn't delete — check permissions"); },
+          });
+        } else {
+          this._removeEvent(ev);
+        }
+      },
+    );
   }
 
   private _removeEvent(ev: CalEvent) {
@@ -535,11 +569,19 @@ export class CalendarComponent implements OnInit, OnDestroy {
   deleteCurrentTrip() {
     this.showTripMenu = false;
     if (!this.tripId) return;
-    if (!confirm(`Delete "${this.currentTripName}"? This also removes all its bucket items, events, and invites. Cannot be undone.`)) return;
-    this.tripSvc.deleteTrip(this.tripId).subscribe({
-      next: () => window.location.reload(),
-      error: () => this.showToast("Couldn't delete. You may not have permission."),
-    });
+    const tripId = this.tripId;
+    const name = this.currentTripName;
+    this.openConfirm(
+      'Delete trip?',
+      `"${name}" will be deleted along with all its bucket items, events, and invites. This can't be undone.`,
+      'Delete trip',
+      () => {
+        this.tripSvc.deleteTrip(tripId).subscribe({
+          next: () => window.location.reload(),
+          error: () => this.showToast("Couldn't delete. You may not have permission."),
+        });
+      },
+    );
   }
 
   private fmt(d: Date): string {

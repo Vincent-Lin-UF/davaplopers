@@ -357,3 +357,15 @@
     </div>
   </div>
 </div>
+
+<!-- Generic confirm modal -->
+<div *ngIf="showConfirmModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
+  <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
+    <h3 class="text-white text-lg font-bold mb-1">{{ confirmTitle }}</h3>
+    <p class="text-neutral-400 text-sm mb-6">{{ confirmMessage }}</p>
+    <div class="flex gap-3">
+      <button (click)="cancelConfirm()" class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
+      <button (click)="runConfirm()" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-xl transition">{{ confirmButtonLabel }}</button>
+    </div>
+  </div>
+</div>

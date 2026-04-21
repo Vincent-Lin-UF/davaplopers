@@ -96,6 +96,12 @@ export class CalendarComponent implements OnInit, OnDestroy {
   // Loading
   loading = true;
 
+  // Draggable map width (desktop only)
+  mapWidth = 360;
+  private readonly MAP_WIDTH_KEY = 'map_width';
+  private readonly MIN_MAP_WIDTH = 240;
+  private readonly MAX_MAP_WIDTH = 900;
+
   // Generic confirmation modal
   showConfirmModal = false;
   confirmTitle = '';
@@ -130,7 +136,43 @@ export class CalendarComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private auth: AuthService,
     private router: Router,
-  ) {}
+  ) {
+    const saved = Number(localStorage.getItem(this.MAP_WIDTH_KEY));
+    if (saved) this.mapWidth = Math.max(this.MIN_MAP_WIDTH, Math.min(this.MAX_MAP_WIDTH, saved));
+  }
+
+  startResizeMap(e: MouseEvent | TouchEvent) {
+    e.preventDefault();
+    const isTouch = 'touches' in e;
+    const getX = (ev: MouseEvent | TouchEvent): number =>
+      'touches' in ev ? ev.touches[0].clientX : (ev as MouseEvent).clientX;
+    const startX = getX(e);
+    const startWidth = this.mapWidth;
+
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      const dx = getX(ev) - startX;
+      // Map is on the right of the handle, so dragging left grows map, dragging right shrinks it
+      this.mapWidth = Math.max(this.MIN_MAP_WIDTH, Math.min(this.MAX_MAP_WIDTH, startWidth - dx));
+      this.cdr.detectChanges();
+      if (this._leaflet) this._leaflet.invalidateSize();
+    };
+
+    const onEnd = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onEnd);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+      localStorage.setItem(this.MAP_WIDTH_KEY, String(this.mapWidth));
+    };
+
+    if (isTouch) {
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onEnd);
+    } else {
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onEnd);
+    }
+  }
 
   logout() {
     this.auth.logout();

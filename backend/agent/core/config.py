@@ -24,7 +24,12 @@ GOOGLE_CLIENT_ID = os.getenv(
     "143526963027-1vb8npsrdgjdhg92goh91nekbs79dvib.apps.googleusercontent.com",
 )
 
-# SMTP (optional — invites are saved even if email is not configured)
+# Email — two paths. If RESEND_API_KEY is set we use the HTTP API (works on DO droplets,
+# which block outbound SMTP). Otherwise we fall back to direct SMTP for local dev.
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+FROM_EMAIL = os.getenv("FROM_EMAIL", "")  # e.g. "onboarding@resend.dev" for testing
+
+# SMTP (fallback — works locally, blocked on DigitalOcean droplets)
 SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")

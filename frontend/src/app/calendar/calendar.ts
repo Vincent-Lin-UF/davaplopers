@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { HttpClient } from '@angular/common/http';
 import { BucketList, BucketItem } from '../bucket-list/bucket-list';
 import { TripService, CalendarEventOut, Trip } from '../services/trip.service';
+import { AuthService } from '../services/auth.service';
 import * as L from 'leaflet';
 
 interface CalEvent {
@@ -89,7 +90,25 @@ export class CalendarComponent implements OnInit, OnDestroy {
   toastMsg = '';
   toastTimeout: any;
 
-  constructor(private tripSvc: TripService, private cdr: ChangeDetectorRef, private http: HttpClient) {}
+  // Permissions
+  isOwner = false;
+
+  // Loading
+  loading = true;
+
+  constructor(
+    private tripSvc: TripService,
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient,
+    private auth: AuthService,
+    private router: Router,
+  ) {}
+
+  logout() {
+    this.auth.logout();
+    this.tripSvc.clearTrip();
+    this.router.navigate(['/login']);
+  }
 
   ngOnInit() {
     this.generateDays();
@@ -105,16 +124,23 @@ export class CalendarComponent implements OnInit, OnDestroy {
           next: (list) => { this.invitesList = list; },
           error: () => {},
         });
-        this.tripSvc.getTripDetails(id).subscribe(trip => {
-          if (trip.destination) {
-            this.tripDestination = trip.destination;
-            this._geocodeAndInitMap(trip.destination);
-          } else {
-            this._initMap(20, 0, 2);
-          }
+        this.tripSvc.getTripDetails(id).subscribe({
+          next: trip => {
+            const user = this.auth.getUser();
+            this.isOwner = !!(user && user.user_id === trip.user_id);
+            this.loading = false;
+            this.cdr.detectChanges();
+            if (trip.destination) {
+              this.tripDestination = trip.destination;
+              this._geocodeAndInitMap(trip.destination);
+            } else {
+              this._initMap(20, 0, 2);
+            }
+          },
+          error: () => { this.loading = false; this.cdr.detectChanges(); },
         });
       },
-      error: () => {},
+      error: () => { this.loading = false; this.cdr.detectChanges(); },
     });
   }
 
@@ -190,7 +216,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
         location: r.location_name ?? '',
         priority: 'Medium',
         activityTypes: [],
-        image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf',
+        image: r.image || 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf',
       },
     };
   }
@@ -255,6 +281,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   deleteSelectedEvent() {
     if (!this.selectedEvent || !this.tripId) return;
     const ev = this.selectedEvent;
+    if (!confirm(`Delete "${ev.item.name}"?`)) return;
     if (ev.event_id) {
       this.tripSvc.deleteEvent(this.tripId, ev.event_id).subscribe({
         next: () => { this._removeEvent(ev); this.showToast('Event deleted'); },
@@ -342,7 +369,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
           const e: CalEvent = { event_id: saved.event_id, date: cell.id, item,
             start_time: this.dropStartTime, end_time: this.dropEndTime };
           this.events.push(e); this._sortAndGenerate();
-          this.showToast('✅ Added to calendar');
+          this.showToast('Added to calendar');
         },
         error: () => {
           const e: CalEvent = { date: cell.id, item };
@@ -502,6 +529,16 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this.tripSvc.updateCurrentTrip({ destination: this.destinationInput.trim() }).subscribe({
       next: () => window.location.reload(),
       error: () => { this.tripSaving = false; this.showToast("Couldn't update. You may not have permission."); this.cdr.detectChanges(); },
+    });
+  }
+
+  deleteCurrentTrip() {
+    this.showTripMenu = false;
+    if (!this.tripId) return;
+    if (!confirm(`Delete "${this.currentTripName}"? This also removes all its bucket items, events, and invites. Cannot be undone.`)) return;
+    this.tripSvc.deleteTrip(this.tripId).subscribe({
+      next: () => window.location.reload(),
+      error: () => this.showToast("Couldn't delete. You may not have permission."),
     });
   }
 

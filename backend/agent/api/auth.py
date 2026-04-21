@@ -1,9 +1,14 @@
+import secrets
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 import bcrypt
 from jose import jwt
-from agent.core.schemas import SignupRequest, SignupResponse, LoginRequest, LoginResponse
-from agent.core.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_MINUTES
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
+from agent.core.schemas import (
+    SignupRequest, SignupResponse, LoginRequest, LoginResponse, GoogleAuthRequest,
+)
+from agent.core.config import JWT_SECRET, JWT_ALGORITHM, JWT_EXPIRE_MINUTES, GOOGLE_CLIENT_ID
 from db.connection import execute_one, execute_write
 
 router = APIRouter()
@@ -62,4 +67,46 @@ async def login(request: LoginRequest):
         user_id=user["user_id"],
         name=user["name"],
         email=user["email"],
+    )
+
+
+@router.post("/google", response_model=LoginResponse)
+async def google_auth(request: GoogleAuthRequest):
+    """Verify a Google ID token and log the user in (creating an account if new)."""
+    try:
+        info = google_id_token.verify_oauth2_token(
+            request.id_token,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID,
+        )
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid Google ID token")
+
+    email = info.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Google token missing email")
+    name = info.get("name") or email.split("@")[0]
+
+    user = await execute_one(
+        "SELECT user_id, name, email FROM users WHERE email = %s",
+        (email,),
+    )
+    if user:
+        user_id = user["user_id"]
+        display_name = user["name"] or name
+    else:
+        # New user — create with a random password they'll never use
+        hashed = hash_password(secrets.token_urlsafe(32))
+        user_id = await execute_write(
+            "INSERT INTO users (name, email, password_hashed) VALUES (%s, %s, %s)",
+            (name, email, hashed),
+        )
+        display_name = name
+
+    token = create_access_token(user_id, email)
+    return LoginResponse(
+        access_token=token,
+        user_id=user_id,
+        name=display_name,
+        email=email,
     )

@@ -2,7 +2,9 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { AuthService, LoginResponse } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 declare const google: any;
 
@@ -22,6 +24,7 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
+    private http: HttpClient,
   ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -33,7 +36,7 @@ export class LoginComponent implements OnInit {
     const initGoogle = () => {
       google.accounts.id.initialize({
         client_id: '143526963027-1vb8npsrdgjdhg92goh91nekbs79dvib.apps.googleusercontent.com',
-        callback: () => this.router.navigate(['/chat']),
+        callback: (response: { credential: string }) => this.onGoogleCredential(response.credential),
       });
       google.accounts.id.renderButton(
         document.getElementById('google-btn'),
@@ -46,6 +49,27 @@ export class LoginComponent implements OnInit {
     } else {
       window.onload = initGoogle;
     }
+  }
+
+  private onGoogleCredential(idToken: string) {
+    this.loading = true;
+    this.errorMsg = '';
+    this.cdr.detectChanges();
+
+    this.http.post<LoginResponse>(`${environment.apiBase}/api/auth/google`, {
+      id_token: idToken,
+    }).subscribe({
+      next: (res) => {
+        this.auth.saveSession(res);
+        const redirect = this.route.snapshot.queryParamMap.get('redirect') || '/chat';
+        this.router.navigateByUrl(redirect);
+      },
+      error: () => {
+        this.loading = false;
+        this.errorMsg = 'Google sign-in failed. Please try again.';
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   onSubmit() {

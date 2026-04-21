@@ -14,6 +14,7 @@ def normalize(raw_results: list[dict]) -> list[Recommendation]:
             estimated_cost=item.get("price_level", item.get("estimated_cost")),
             tags=item.get("tags", item.get("types", [])),
             source=item.get("source", "tool"),
+            image=item.get("image"),
         )
         recommendations.append(rec)
     return recommendations

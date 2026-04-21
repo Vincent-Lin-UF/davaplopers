@@ -30,5 +30,6 @@ export class AuthService {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('current_trip_id');
+    localStorage.removeItem('chat_sessions');
   }
 }

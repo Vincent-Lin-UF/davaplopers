@@ -18,6 +18,12 @@ JWT_SECRET = os.getenv("JWT_SECRET", "change_this_to_a_long_random_secret")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
+# Google Sign-In — must match the Client ID wired into the frontend's login button
+GOOGLE_CLIENT_ID = os.getenv(
+    "GOOGLE_CLIENT_ID",
+    "143526963027-1vb8npsrdgjdhg92goh91nekbs79dvib.apps.googleusercontent.com",
+)
+
 # SMTP (optional — invites are saved even if email is not configured)
 SMTP_HOST = os.getenv("SMTP_HOST", "")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))

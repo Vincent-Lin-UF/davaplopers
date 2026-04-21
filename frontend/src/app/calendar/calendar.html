@@ -1,18 +1,20 @@
-<div class="h-screen overflow-hidden bg-neutral-900 flex flex-col" cdkDropListGroup>
+<div class="min-h-screen lg:h-screen lg:overflow-hidden bg-neutral-900 flex flex-col" cdkDropListGroup>
 
   <!-- Navbar -->
-  <div class="bg-neutral-800 px-6 py-4 flex items-center justify-between shrink-0">
-    <div class="flex items-center gap-2">
+  <div class="bg-neutral-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 shrink-0">
+    <div class="flex items-center gap-2 shrink-0">
       <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-sm">✈️</div>
-      <span class="text-white font-bold text-lg">PlanCation</span>
+      <span class="text-white font-bold text-base sm:text-lg hidden sm:inline">PlanCation</span>
     </div>
-    <nav class="flex items-center gap-1">
+    <nav class="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
       <a routerLink="/chat" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition">Chat</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Chat</a>
       <a routerLink="/bucketlist" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition">Bucket List</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Bucket List</a>
       <a routerLink="/calendar" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition">Calendar</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Calendar</a>
+      <button (click)="logout()"
+        class="text-neutral-400 hover:text-red-400 text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Log out</button>
     </nav>
   </div>
 
@@ -21,23 +23,28 @@
     {{ toastMsg }}
   </div>
 
-  <div class="flex-1 px-4 py-4 overflow-hidden min-h-0">
-    <div class="w-full h-full">
-      <div class="flex flex-col lg:flex-row gap-6 items-stretch h-full">
+  <!-- Loading banner -->
+  <div *ngIf="loading" class="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] bg-neutral-700 text-white text-sm px-4 py-2 rounded-xl shadow-lg border border-neutral-600">
+    <span class="animate-pulse">Loading trip...</span>
+  </div>
+
+  <div class="px-4 py-4 lg:flex-1 lg:overflow-hidden lg:min-h-0">
+    <div class="w-full lg:h-full">
+      <div class="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-stretch lg:h-full">
 
         <!-- Left sidebar: bucket list -->
-        <div class="w-full lg:w-[300px] shrink-0 flex flex-col overflow-hidden min-h-0">
+        <div class="w-full lg:w-[300px] shrink-0 flex flex-col lg:overflow-hidden lg:min-h-0 min-h-[400px]">
           <app-bucket-list [showNav]="false" (itemDropped)="dropToBucketList($event)" (itemDeleted)="onBucketItemDeleted($event)" class="block w-full flex-1 min-h-0 overflow-hidden"></app-bucket-list>
         </div>
 
         <!-- Calendar -->
-        <div class="flex-1 w-full bg-neutral-800 rounded-2xl p-6 flex flex-col">
+        <div class="w-full lg:flex-1 bg-neutral-800 rounded-2xl p-6 flex flex-col min-h-[600px]">
 
           <!-- Trip selector -->
           <div class="relative mb-4">
             <button (click)="showTripMenu = !showTripMenu"
               class="text-white bg-neutral-700 hover:bg-neutral-600 text-sm font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
-              ✈️ {{ currentTripName }}
+              {{ currentTripName }}
               <span class="text-neutral-400 text-xs">▼</span>
             </button>
             <div *ngIf="showTripMenu"
@@ -50,13 +57,16 @@
               </div>
               <div class="border-t border-neutral-600 my-1"></div>
               <button (click)="createNewTrip()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
-                + New trip
+                New trip
               </button>
-              <button (click)="renameTrip()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
-                ✎ Rename current
+              <button *ngIf="isOwner" (click)="renameTrip()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
+                Rename current
               </button>
-              <button (click)="setDestination()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
-                📍 Set destination
+              <button *ngIf="isOwner" (click)="setDestination()" class="w-full text-left px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-600 transition">
+                Set destination
+              </button>
+              <button *ngIf="isOwner" (click)="deleteCurrentTrip()" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-neutral-600 transition">
+                Delete trip
               </button>
             </div>
           </div>
@@ -71,15 +81,15 @@
             <div class="flex items-center gap-2">
               <button (click)="exportICS()" [disabled]="!tripId"
                 class="text-xs bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 text-neutral-900 font-bold px-3 py-1.5 rounded-lg transition">
-                ↓ Export .ics
+                Export .ics
               </button>
-              <button (click)="openInviteModal()" [disabled]="!tripId"
+              <button *ngIf="isOwner" (click)="openInviteModal()" [disabled]="!tripId"
                 class="text-xs bg-neutral-700 hover:bg-neutral-600 disabled:opacity-40 text-white font-bold px-3 py-1.5 rounded-lg transition">
-                ✉️ Invite
+                Invite
               </button>
-              <button (click)="openInvitesList()" [disabled]="!tripId"
+              <button *ngIf="isOwner" (click)="openInvitesList()" [disabled]="!tripId"
                 class="text-xs bg-neutral-700 hover:bg-neutral-600 disabled:opacity-40 text-white font-bold px-3 py-1.5 rounded-lg transition">
-                📋 View Invites
+                View invites
               </button>
             </div>
           </div>
@@ -144,9 +154,9 @@
         </div>
 
         <!-- Map -->
-        <div class="w-full lg:w-[900px] shrink-0 bg-neutral-800 rounded-2xl overflow-hidden flex flex-col">
+        <div class="w-full lg:w-[900px] shrink-0 bg-neutral-800 rounded-2xl overflow-hidden flex flex-col h-[400px] lg:h-auto">
           <div class="px-4 py-3 border-b border-neutral-700 shrink-0">
-            <p class="text-white text-sm font-bold">🗺️ {{ tripDestination || 'Trip Map' }}</p>
+            <p class="text-white text-sm font-bold">{{ tripDestination || 'Trip map' }}</p>
             <p *ngIf="!tripDestination" class="text-neutral-500 text-xs">Set a destination in your trip to see the map.</p>
           </div>
           <div id="trip-map" class="flex-1"></div>
@@ -160,7 +170,7 @@
 <!-- ── Time Picker Modal (shown after drag & drop) ────────────────────────── -->
 <div *ngIf="showTimePicker && pendingDrop" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
-    <h3 class="text-white text-lg font-bold mb-1">⏰ Set Event Time</h3>
+    <h3 class="text-white text-lg font-bold mb-1">Set event time</h3>
     <p class="text-yellow-400 text-sm font-medium mb-4">{{ pendingDrop.item.name }}</p>
 
     <div class="flex gap-3 mb-6">
@@ -193,8 +203,8 @@
 <div *ngIf="showEventModal && selectedEvent" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
     <h3 class="text-white text-lg font-bold mb-1">{{ selectedEvent.item.name }}</h3>
-    <p class="text-neutral-400 text-sm mb-1">📅 {{ selectedEvent.date }}</p>
-    <p *ngIf="selectedEvent.start_time" class="text-yellow-400 text-sm mb-1">🕐 {{ selectedEvent.start_time }}<span *ngIf="selectedEvent.end_time"> → {{ selectedEvent.end_time }}</span></p>
+    <p class="text-neutral-400 text-sm mb-1">{{ selectedEvent.date }}</p>
+    <p *ngIf="selectedEvent.start_time" class="text-yellow-400 text-sm mb-1">{{ selectedEvent.start_time }}<span *ngIf="selectedEvent.end_time"> – {{ selectedEvent.end_time }}</span></p>
     <p *ngIf="selectedEvent.item.location"
        class="text-neutral-400 hover:text-yellow-400 text-sm mb-5 cursor-pointer transition"
        (click)="flyToLocation(selectedEvent.item.location)"
@@ -207,9 +217,9 @@
         class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">
         Close
       </button>
-      <button (click)="deleteSelectedEvent()"
+      <button *ngIf="isOwner" (click)="deleteSelectedEvent()"
         class="flex-1 bg-red-600 hover:bg-red-500 text-white text-sm font-bold py-3 rounded-xl transition">
-        🗑 Delete Event
+        Delete event
       </button>
     </div>
   </div>
@@ -219,12 +229,11 @@
 <div *ngIf="showInviteModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
     <div *ngIf="inviteSuccess" class="text-center py-6">
-      <div class="text-4xl mb-3">✅</div>
-      <p class="text-white font-bold">Email sent!</p>
+      <p class="text-white font-bold">Email sent.</p>
       <p class="text-neutral-400 text-xs mt-1">If that address exists, they'll receive an invite.</p>
     </div>
     <div *ngIf="!inviteSuccess">
-      <h3 class="text-white text-lg font-bold mb-1">✉️ Invite to Trip</h3>
+      <h3 class="text-white text-lg font-bold mb-1">Invite to trip</h3>
       <p class="text-neutral-400 text-sm mb-5">Share this trip with a teammate.</p>
       <div class="mb-3">
         <label class="block text-neutral-400 text-xs font-medium mb-1.5">Email address</label>
@@ -244,7 +253,7 @@
         <button (click)="closeInviteModal()" class="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-bold py-3 rounded-xl transition">Cancel</button>
         <button (click)="sendInvite()" [disabled]="!inviteEmail.trim() || inviteSaving"
           class="flex-1 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
-          {{ inviteSaving ? 'Sending...' : 'Send Invite' }}
+          {{ inviteSaving ? 'Sending...' : 'Send invite' }}
         </button>
       </div>
     </div>
@@ -255,14 +264,14 @@
 <div *ngIf="showInvitesListModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-md border border-neutral-700">
     <div class="flex items-center justify-between mb-5">
-      <h3 class="text-white text-lg font-bold">📋 Sent Invites</h3>
+      <h3 class="text-white text-lg font-bold">Sent invites</h3>
       <button (click)="closeInvitesList()" class="text-neutral-400 hover:text-white text-xl">✕</button>
     </div>
 
     <div *ngIf="invitesLoading" class="text-neutral-400 text-sm text-center py-6">Loading...</div>
 
     <div *ngIf="!invitesLoading && invitesList.length === 0" class="text-neutral-400 text-sm text-center py-6">
-      No invites sent yet. Use the ✉️ Invite button to share this trip.
+      No invites sent yet. Use the Invite button to share this trip.
     </div>
 
     <div *ngIf="!invitesLoading && invitesList.length > 0" class="space-y-3">
@@ -279,7 +288,7 @@
     </div>
 
     <button (click)="openInviteModal()" class="w-full mt-5 bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-sm font-bold py-3 rounded-xl transition">
-      ✉️ Send New Invite
+      Send new invite
     </button>
   </div>
 </div>
@@ -287,7 +296,7 @@
 <!-- ── New Trip Modal ─────────────────────────────────────────────────────── -->
 <div *ngIf="showNewTripModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
-    <h3 class="text-white text-lg font-bold mb-1">✈️ New Trip</h3>
+    <h3 class="text-white text-lg font-bold mb-1">New trip</h3>
     <p class="text-neutral-400 text-sm mb-5">Start planning a new getaway.</p>
     <div class="mb-3">
       <label class="block text-neutral-400 text-xs font-medium mb-1.5">Trip name</label>
@@ -312,7 +321,7 @@
 <!-- ── Rename Trip Modal ──────────────────────────────────────────────────── -->
 <div *ngIf="showRenameTripModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
-    <h3 class="text-white text-lg font-bold mb-1">✎ Rename Trip</h3>
+    <h3 class="text-white text-lg font-bold mb-1">Rename trip</h3>
     <p class="text-neutral-400 text-sm mb-5">Give this trip a new name.</p>
     <div class="mb-6">
       <label class="block text-neutral-400 text-xs font-medium mb-1.5">Trip name</label>
@@ -332,7 +341,7 @@
 <!-- ── Destination Modal ──────────────────────────────────────────────────── -->
 <div *ngIf="showDestinationModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
-    <h3 class="text-white text-lg font-bold mb-1">📍 Set Destination</h3>
+    <h3 class="text-white text-lg font-bold mb-1">Set destination</h3>
     <p class="text-neutral-400 text-sm mb-5">This is where the trip map centers.</p>
     <div class="mb-6">
       <label class="block text-neutral-400 text-xs font-medium mb-1.5">Destination</label>

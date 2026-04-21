@@ -21,6 +21,7 @@ export interface BucketItemOut {
   location_name: string | null;
   notes: string | null;
   status: string;
+  image: string | null;
 }
 
 export interface CalendarEventOut {
@@ -32,6 +33,7 @@ export interface CalendarEventOut {
   start_time: string | null;
   end_time: string | null;
   location_name: string | null;
+  image: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +85,14 @@ export class TripService {
 
   updateCurrentTrip(body: any): Observable<Trip> {
     return this.http.patch<Trip>(`${this.base}/trips/${this._tripId}`, body);
+  }
+
+  deleteTrip(tripId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/trips/${tripId}`).pipe(
+      tap(() => {
+        if (this._tripId === tripId) this.clearTrip();
+      })
+    );
   }
 
  

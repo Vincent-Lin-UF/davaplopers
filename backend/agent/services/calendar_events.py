@@ -16,7 +16,7 @@ def _time_str(val) -> str | None:
 
 async def _row(event_id: int, trip_id: int) -> Optional[dict]:
     row = await execute_one(
-        "SELECT event_id, trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name FROM calendar_events WHERE event_id=%s AND trip_id=%s",
+        "SELECT event_id, trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name, image FROM calendar_events WHERE event_id=%s AND trip_id=%s",
         (event_id, trip_id),
     )
     if not row:
@@ -29,7 +29,7 @@ async def _row(event_id: int, trip_id: int) -> Optional[dict]:
 
 async def list_events(trip_id: int) -> list[dict]:
     rows = await execute(
-        "SELECT event_id, trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name FROM calendar_events WHERE trip_id=%s ORDER BY event_date ASC, start_time ASC",
+        "SELECT event_id, trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name, image FROM calendar_events WHERE trip_id=%s ORDER BY event_date ASC, start_time ASC",
         (trip_id,),
     )
     result = []
@@ -41,20 +41,20 @@ async def list_events(trip_id: int) -> list[dict]:
     return result
 
 
-async def create_event(trip_id: int, title: str, event_date: str, bucket_item_id=None, start_time=None, end_time=None, location_name=None) -> dict:
+async def create_event(trip_id: int, title: str, event_date: str, bucket_item_id=None, start_time=None, end_time=None, location_name=None, image=None) -> dict:
     event_id = await execute_write(
-        "INSERT INTO calendar_events (trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-        (trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name),
+        "INSERT INTO calendar_events (trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name, image) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+        (trip_id, bucket_item_id, title, event_date, start_time, end_time, location_name, image),
     )
     return await _row(event_id, trip_id)
 
 
-async def update_event(event_id: int, trip_id: int, title=None, event_date=None, start_time=None, end_time=None, location_name=None) -> Optional[dict]:
+async def update_event(event_id: int, trip_id: int, title=None, event_date=None, start_time=None, end_time=None, location_name=None, image=None) -> Optional[dict]:
     if not await _row(event_id, trip_id):
         return None
     await execute_write(
-        "UPDATE calendar_events SET title=COALESCE(%s,title), event_date=COALESCE(%s,event_date), start_time=COALESCE(%s,start_time), end_time=COALESCE(%s,end_time), location_name=COALESCE(%s,location_name) WHERE event_id=%s AND trip_id=%s",
-        (title, event_date, start_time, end_time, location_name, event_id, trip_id),
+        "UPDATE calendar_events SET title=COALESCE(%s,title), event_date=COALESCE(%s,event_date), start_time=COALESCE(%s,start_time), end_time=COALESCE(%s,end_time), location_name=COALESCE(%s,location_name), image=COALESCE(%s,image) WHERE event_id=%s AND trip_id=%s",
+        (title, event_date, start_time, end_time, location_name, image, event_id, trip_id),
     )
     return await _row(event_id, trip_id)
 

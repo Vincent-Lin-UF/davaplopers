@@ -1,8 +1,8 @@
 <div class="min-h-screen bg-neutral-900 flex flex-col">
 
   <!-- Header -->
-  <div class="bg-neutral-800 px-4 py-3 flex items-center justify-between shrink-0 border-b border-neutral-700">
-    <div class="flex items-center gap-3">
+  <div class="bg-neutral-800 px-3 sm:px-4 py-3 flex items-center justify-between gap-2 shrink-0 border-b border-neutral-700">
+    <div class="flex items-center gap-2 sm:gap-3 shrink-0">
       <!-- Sidebar toggle -->
       <button (click)="showSidebar = !showSidebar"
         class="text-neutral-400 hover:text-white hover:bg-neutral-700 p-2 rounded-lg transition">
@@ -10,25 +10,31 @@
       </button>
       <div class="flex items-center gap-2">
         <div class="w-7 h-7 bg-yellow-400 rounded-lg flex items-center justify-center text-xs">✈️</div>
-        <span class="text-white font-bold">PlanCation</span>
+        <span class="text-white font-bold hidden sm:inline">PlanCation</span>
       </div>
     </div>
-    <nav class="flex items-center gap-1">
+    <nav class="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
       <a routerLink="/chat" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg transition">Chat</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg transition whitespace-nowrap">Chat</a>
       <a routerLink="/bucketlist" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg transition">Bucket List</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg transition whitespace-nowrap">Bucket List</a>
       <a routerLink="/calendar" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg transition">Calendar</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg transition whitespace-nowrap">Calendar</a>
+      <button (click)="logout()"
+        class="text-neutral-400 hover:text-red-400 text-xs sm:text-sm font-medium px-2 sm:px-3 py-2 rounded-lg transition whitespace-nowrap">Log out</button>
     </nav>
   </div>
 
   <!-- Body -->
   <div class="flex flex-1 overflow-hidden">
 
+    <!-- Sidebar backdrop (mobile only) -->
+    <div *ngIf="showSidebar" (click)="showSidebar = false"
+      class="fixed inset-0 bg-black/50 z-40 sm:hidden"></div>
+
     <!-- Sidebar -->
     <div *ngIf="showSidebar"
-      class="w-64 bg-neutral-800 border-r border-neutral-700 flex flex-col shrink-0">
+      class="fixed sm:static inset-y-0 left-0 w-64 bg-neutral-800 border-r border-neutral-700 flex flex-col shrink-0 z-50">
 
       <div class="p-3 border-b border-neutral-700">
         <button (click)="newChat()"
@@ -56,7 +62,7 @@
       <div class="p-3 border-t border-neutral-700">
         <button (click)="clearChat()"
           class="w-full bg-neutral-700 hover:bg-neutral-600 text-neutral-300 text-xs font-medium py-2 rounded-xl transition">
-          🗑 Clear Chat History
+          Clear chat history
         </button>
       </div>
     </div>
@@ -69,13 +75,12 @@
 
         <!-- Empty state -->
         <div *ngIf="messages.length === 0" class="flex flex-col items-center justify-center h-full text-center py-16">
-          <div class="text-5xl mb-4">✈️</div>
           <h2 class="text-white text-xl font-bold mb-2">Where do you want to go?</h2>
           <p class="text-neutral-400 text-sm max-w-sm mb-6">Ask me to plan a trip, get hotel recommendations, or build a day-by-day itinerary.</p>
           <div class="flex flex-wrap gap-2 justify-center">
-            <button (click)="input='Plan a 5-day trip to Tokyo, Japan'" class="bg-neutral-700 hover:bg-neutral-600 text-white text-xs px-3 py-2 rounded-xl transition">Plan a 5-day trip to Tokyo 🗼</button>
-            <button (click)="input='Plan a week in Paris with hotel recommendations'" class="bg-neutral-700 hover:bg-neutral-600 text-white text-xs px-3 py-2 rounded-xl transition">Week in Paris 🗺️</button>
-            <button (click)="input='Budget trip to Bali for 7 days'" class="bg-neutral-700 hover:bg-neutral-600 text-white text-xs px-3 py-2 rounded-xl transition">Budget Bali trip 🌴</button>
+            <button (click)="input='Plan a 5-day trip to Tokyo, Japan'" class="bg-neutral-700 hover:bg-neutral-600 text-white text-xs px-3 py-2 rounded-xl transition">5 days in Tokyo 🗼</button>
+            <button (click)="input='Plan a week in Paris with hotel recommendations'" class="bg-neutral-700 hover:bg-neutral-600 text-white text-xs px-3 py-2 rounded-xl transition">A week in Paris 🗺️</button>
+            <button (click)="input='Budget trip to Bali for 7 days'" class="bg-neutral-700 hover:bg-neutral-600 text-white text-xs px-3 py-2 rounded-xl transition">Budget Bali 🌴</button>
           </div>
         </div>
 
@@ -110,13 +115,13 @@
               <p class="text-neutral-300 text-sm leading-relaxed">{{ msg.plan.overview }}</p>
               <a [href]="mapUrl(msg.plan.destination)" target="_blank"
                 class="inline-flex items-center gap-1 mt-3 text-xs text-yellow-400 hover:text-yellow-300 transition">
-                🗺️ View on Google Maps →
+                View on Google Maps →
               </a>
             </div>
 
             <!-- Hotel -->
             <div *ngIf="msg.plan.hotel" class="bg-neutral-800 rounded-2xl p-4 border border-neutral-700">
-              <h3 class="text-white text-sm font-bold mb-2">🏨 Recommended Hotel</h3>
+              <h3 class="text-white text-sm font-bold mb-2">Recommended hotel</h3>
               <div class="flex items-start justify-between">
                 <div class="flex-1">
                   <p class="text-yellow-400 text-sm font-semibold">{{ msg.plan.hotel.name }}</p>
@@ -126,7 +131,7 @@
                 <div class="ml-4 flex flex-col items-end gap-2">
                   <span class="text-xs bg-yellow-400 text-neutral-900 font-bold px-2 py-1 rounded-lg">{{ msg.plan.hotel.price_range }}</span>
                   <a [href]="mapUrl(msg.plan.hotel.name + ' ' + msg.plan.hotel.address)" target="_blank"
-                    class="text-xs text-yellow-400 hover:text-yellow-300">📍 Map →</a>
+                    class="text-xs text-yellow-400 hover:text-yellow-300">Map →</a>
                 </div>
               </div>
             </div>
@@ -143,11 +148,13 @@
               </button>
               <div *ngIf="expandedDay === day.day" class="px-5 pb-4 space-y-3 border-t border-neutral-700">
                 <div *ngFor="let act of day.activities" class="pt-3">
-                  <div class="flex items-start justify-between">
+                  <div class="flex items-start gap-3">
+                    <img *ngIf="act.image" [src]="act.image"
+                      class="w-20 h-20 rounded-lg object-cover shrink-0" />
                     <div class="flex-1">
                       <div class="flex items-center gap-2 mb-1">
-                        <span class="text-xs bg-neutral-700 text-yellow-400 font-semibold px-2 py-0.5 rounded-full font-mono">🕐 {{ act.time }}</span>
-                        <span *ngIf="act.end_time" class="text-neutral-500 text-xs">→ {{ act.end_time }}</span>
+                        <span class="text-xs bg-neutral-700 text-yellow-400 font-semibold px-2 py-0.5 rounded-full font-mono">{{ act.time }}</span>
+                        <span *ngIf="act.end_time" class="text-neutral-500 text-xs">– {{ act.end_time }}</span>
                         <span class="text-white text-sm font-semibold">{{ act.activity }}</span>
                       </div>
                       <p class="text-neutral-400 text-xs mb-1">📍 {{ act.location }}</p>
@@ -156,7 +163,7 @@
                     </div>
                     <a [href]="mapUrl(act.location)" target="_blank"
                       class="ml-3 shrink-0 text-xs text-yellow-400 hover:text-yellow-300 bg-neutral-700 px-2 py-1 rounded-lg transition">
-                      🗺️ Map
+                      Map
                     </a>
                   </div>
                 </div>
@@ -165,7 +172,7 @@
 
             <!-- Tips -->
             <div *ngIf="msg.plan.tips?.length" class="bg-neutral-800 rounded-2xl p-4 border border-neutral-700">
-              <h3 class="text-white text-sm font-bold mb-3">💡 Travel Tips</h3>
+              <h3 class="text-white text-sm font-bold mb-3">Travel tips</h3>
               <ul class="space-y-1.5">
                 <li *ngFor="let tip of msg.plan.tips" class="flex items-start gap-2 text-neutral-300 text-xs">
                   <span class="text-yellow-400 shrink-0">•</span> {{ tip }}
@@ -176,7 +183,7 @@
             <!-- Add to Calendar + Bucket List -->
             <button (click)="openCalendarModal(msg.plan)"
               class="w-full bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-sm py-3 rounded-2xl transition">
-              📅 Add to Calendar & Bucket List
+              Add to calendar & bucket list
             </button>
 
           </div>
@@ -185,7 +192,7 @@
         <!-- Loading -->
         <div *ngIf="loading" class="flex justify-start">
           <div class="bg-neutral-800 text-neutral-400 rounded-2xl px-5 py-3 text-sm border border-neutral-700 flex items-center gap-2">
-            <span class="animate-pulse">✈️</span> Planning your trip...
+            <span class="animate-pulse">Planning your trip...</span>
           </div>
         </div>
 
@@ -217,7 +224,7 @@
         <!-- Bottom actions -->
         <div class="flex justify-between items-center max-w-3xl mx-auto mt-2 px-1">
           <button (click)="newChat()" class="text-neutral-500 hover:text-white text-xs transition">+ New Chat</button>
-          <button (click)="clearChat()" class="text-neutral-500 hover:text-red-400 text-xs transition">🗑 Clear history</button>
+          <button (click)="clearChat()" class="text-neutral-500 hover:text-red-400 text-xs transition">Clear history</button>
         </div>
       </div>
 
@@ -228,7 +235,7 @@
 <!-- Add to Calendar Modal -->
 <div *ngIf="showCalendarModal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999] px-4">
   <div class="bg-neutral-800 rounded-2xl p-6 w-full max-w-sm border border-neutral-700">
-    <h3 class="text-white text-lg font-bold mb-1">📅 Add Trip to Calendar</h3>
+    <h3 class="text-white text-lg font-bold mb-1">Add trip to calendar</h3>
     <p class="text-neutral-400 text-sm mb-5">Pick a trip to add this to, and a start date.</p>
 
     <!-- Trip picker -->

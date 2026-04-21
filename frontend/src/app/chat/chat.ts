@@ -2,10 +2,11 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, ChangeDetec
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TripService, Trip } from '../services/trip.service';
 import { ChatStateService, ChatMessage, TripPlan, ChatSession } from '../services/chat-state.service';
+import { AuthService } from '../services/auth.service';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -44,7 +45,15 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     private tripSvc: TripService,
     public chatState: ChatStateService,
     private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private router: Router,
   ) {}
+
+  logout() {
+    this.auth.logout();
+    this.tripSvc.clearTrip();
+    this.router.navigate(['/login']);
+  }
 
   ngOnInit() {
     this.chatState.getOrCreateSession();
@@ -121,7 +130,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       return;
     }
     if (parsed.action === 'add_to_bucket' && parsed.items?.length) {
-      this.chatState.add({ role: 'assistant', text: `✅ Adding ${parsed.items.length} item(s) to your bucket list...` });
+      this.chatState.add({ role: 'assistant', text: `Adding ${parsed.items.length} item(s) to your bucket list...` });
       if (this.tripId) {
         parsed.items.forEach((item: any) => {
           this.tripSvc.createItem(this.tripId!, {
@@ -129,13 +138,14 @@ export class ChatComponent implements OnInit, AfterViewChecked {
             location_name: item.location,
             category: item.category || 'Travel',
             priority: item.priority || 'medium',
+            image: item.image || null,
           }).subscribe();
         });
       }
       return;
     }
     if (parsed.action === 'remove_from_bucket' && parsed.titles?.length) {
-      this.chatState.add({ role: 'assistant', text: `🗑 Removing "${parsed.titles.join(', ')}" from your bucket list.` });
+      this.chatState.add({ role: 'assistant', text: `Removing "${parsed.titles.join(', ')}" from your bucket list.` });
       return;
     }
     if (parsed.followup) {
@@ -169,7 +179,14 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.newTripNameInput = plan.destination ? `Trip to ${plan.destination}` : '';
     this.newTripDestinationInput = plan.destination || '';
     this.tripSvc.listAllTrips().subscribe({
-      next: (ts) => { this.trips = ts; this.cdr.detectChanges(); },
+      next: (ts) => {
+        const user = this.auth.getUser();
+        this.trips = user ? ts.filter(t => t.user_id === user.user_id) : [];
+        if (this.selectedTripId && !this.trips.some(t => t.trip_id === this.selectedTripId)) {
+          this.selectedTripId = 'new';
+        }
+        this.cdr.detectChanges();
+      },
       error: () => {},
     });
     this.showCalendarModal = true;
@@ -200,7 +217,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         },
         error: () => {
           this.calendarSaving = false;
-          this.chatState.add({ role: 'assistant', text: '❌ Could not create the trip. Please try again.' });
+          this.chatState.add({ role: 'assistant', text: 'Could not create the trip. Please try again.' });
           this.cdr.detectChanges();
         },
       });
@@ -217,7 +234,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     const start = new Date(this.calendarStartDate + 'T00:00:00');
     const plan = this.pendingPlan!;
 
-    const entries: { title: string; date: string; start_time: string | null; end_time: string | null; location: string | null }[] = [];
+    const entries: { title: string; date: string; start_time: string | null; end_time: string | null; location: string | null; image: string | null }[] = [];
     plan.days.forEach(day => {
       const d = new Date(start);
       d.setDate(start.getDate() + day.day - 1);
@@ -229,6 +246,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
           start_time: act.time || null,
           end_time: act.end_time || null,
           location: act.location || null,
+          image: act.image || null,
         });
       });
     });
@@ -243,6 +261,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
               location_name: act.location || null,
               category: 'Travel',
               priority: 'medium',
+              image: act.image || null,
             }).subscribe();
           });
         });
@@ -251,7 +270,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         this.pendingPlan = null;
         this.chatState.add({
           role: 'assistant',
-          text: `✅ Added ${entries.length} activities to your calendar and bucket list!`,
+          text: `Added ${entries.length} activities to your calendar and bucket list.`,
         });
         this.cdr.detectChanges();
         return;
@@ -264,6 +283,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
         start_time: entry.start_time,
         end_time: entry.end_time,
         location_name: entry.location,
+        image: entry.image,
       }).subscribe({
         next: () => { this.cdr.detectChanges(); addNext(); },
         error: () => { this.cdr.detectChanges(); addNext(); },

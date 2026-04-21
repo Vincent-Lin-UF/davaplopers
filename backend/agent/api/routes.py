@@ -101,13 +101,13 @@ async def list_items(trip_id: int, user: dict = Depends(get_current_user)):
 @router.post("/trips/{trip_id}/items", response_model=BucketItemOut, status_code=201)
 async def create_item(trip_id: int, body: BucketItemCreate, user: dict = Depends(get_current_user)):
     await _require_editor(trip_id, user)
-    return await item_svc.create_item(trip_id, body.title, body.category, body.priority, body.location_name, body.notes)
+    return await item_svc.create_item(trip_id, body.title, body.category, body.priority, body.location_name, body.notes, body.image)
 
 
 @router.patch("/trips/{trip_id}/items/{item_id}", response_model=BucketItemOut)
 async def update_item(trip_id: int, item_id: int, body: BucketItemUpdate, user: dict = Depends(get_current_user)):
     await _require_editor(trip_id, user)
-    item = await item_svc.update_item(item_id, trip_id, body.title, body.category, body.priority, body.location_name, body.notes, body.status)
+    item = await item_svc.update_item(item_id, trip_id, body.title, body.category, body.priority, body.location_name, body.notes, body.status, body.image)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
@@ -131,13 +131,13 @@ async def list_events(trip_id: int, user: dict = Depends(get_current_user)):
 @router.post("/trips/{trip_id}/events", response_model=CalendarEventOut, status_code=201)
 async def create_event(trip_id: int, body: CalendarEventCreate, user: dict = Depends(get_current_user)):
     await _require_editor(trip_id, user)
-    return await event_svc.create_event(trip_id, body.title, str(body.event_date), body.bucket_item_id, body.start_time, body.end_time, body.location_name)
+    return await event_svc.create_event(trip_id, body.title, str(body.event_date), body.bucket_item_id, body.start_time, body.end_time, body.location_name, body.image)
 
 
 @router.patch("/trips/{trip_id}/events/{event_id}", response_model=CalendarEventOut)
 async def update_event(trip_id: int, event_id: int, body: CalendarEventUpdate, user: dict = Depends(get_current_user)):
     await _require_editor(trip_id, user)
-    ev = await event_svc.update_event(event_id, trip_id, body.title, str(body.event_date) if body.event_date else None, body.start_time, body.end_time, body.location_name)
+    ev = await event_svc.update_event(event_id, trip_id, body.title, str(body.event_date) if body.event_date else None, body.start_time, body.end_time, body.location_name, body.image)
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found")
     return ev

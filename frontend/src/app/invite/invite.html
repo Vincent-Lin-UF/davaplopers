@@ -58,8 +58,7 @@
     </div>
 
     <div *ngIf="done === 'accepted'" class="text-center">
-      <div class="text-4xl mb-3">✅</div>
-      <p class="text-white font-bold mb-4">Invite accepted!</p>
+      <p class="text-white font-bold mb-4">Invite accepted.</p>
       <button (click)="goToTrip()"
         class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 font-bold text-sm py-3 rounded-xl transition px-6">
         Go to trip
@@ -67,7 +66,6 @@
     </div>
 
     <div *ngIf="done === 'declined'" class="text-center">
-      <div class="text-4xl mb-3">👋</div>
       <p class="text-white font-bold">Invite declined.</p>
     </div>
   </div>

@@ -13,6 +13,7 @@ FIELD_MASK = ",".join([
     "places.types",
     "places.priceLevel",
     "places.editorialSummary",
+    "places.photos",
 ])
 
 # mock data for testing without API key
@@ -169,6 +170,13 @@ class SearchPlacesTool(Tool):
         results = []
         for place in resp.json().get("places", []):
             types = place.get("types", [])
+            photos = place.get("photos") or []
+            image = None
+            if photos and photos[0].get("name"):
+                image = (
+                    f"https://places.googleapis.com/v1/{photos[0]['name']}/media"
+                    f"?maxHeightPx=400&key={GOOGLE_PLACES_API_KEY}"
+                )
             results.append({
                 "place_id": place.get("id"),
                 "name": place.get("displayName", {}).get("text", "Unknown"),
@@ -179,6 +187,7 @@ class SearchPlacesTool(Tool):
                 "types": types,
                 "price_level": place.get("priceLevel"),
                 "description": (place.get("editorialSummary") or {}).get("text"),
+                "image": image,
                 "source": "google_places",
             })
         return results

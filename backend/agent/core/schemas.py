@@ -24,6 +24,7 @@ class Recommendation(BaseModel):
     score: float = 0.0
     tags: list[str] = []
     source: Optional[str] = None
+    image: Optional[str] = None
 
 
 class ChatTurn(BaseModel):
@@ -104,6 +105,7 @@ class BucketItemCreate(BaseModel):
     priority: str = "medium"
     location_name: Optional[str] = None
     notes: Optional[str] = None
+    image: Optional[str] = None
 
 
 class BucketItemUpdate(BaseModel):
@@ -113,6 +115,7 @@ class BucketItemUpdate(BaseModel):
     location_name: Optional[str] = None
     notes: Optional[str] = None
     status: Optional[str] = None
+    image: Optional[str] = None
 
 
 class BucketItemOut(BaseModel):
@@ -124,6 +127,7 @@ class BucketItemOut(BaseModel):
     location_name: Optional[str]
     notes: Optional[str]
     status: str
+    image: Optional[str] = None
 
 
 class CalendarEventCreate(BaseModel):
@@ -133,6 +137,7 @@ class CalendarEventCreate(BaseModel):
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     location_name: Optional[str] = None
+    image: Optional[str] = None
 
 
 class CalendarEventUpdate(BaseModel):
@@ -141,6 +146,7 @@ class CalendarEventUpdate(BaseModel):
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     location_name: Optional[str] = None
+    image: Optional[str] = None
 
 
 class CalendarEventOut(BaseModel):
@@ -152,6 +158,7 @@ class CalendarEventOut(BaseModel):
     start_time: Optional[str]
     end_time: Optional[str]
     location_name: Optional[str]
+    image: Optional[str] = None
 
 
 

@@ -2,19 +2,27 @@
   {{ toastMsg }}
 </div>
 
+<div [class.min-h-screen]="showNav" [class.bg-neutral-900]="showNav" [class.p-4]="showNav" class="h-full flex flex-col">
+
+<div *ngIf="loading" class="text-neutral-400 text-xs text-center py-4">
+  <span class="animate-pulse">Loading bucket list...</span>
+</div>
+
 @if (showNav) {
-  <div class="bg-neutral-800 px-6 py-4 flex items-center justify-between mb-4 rounded-2xl">
-    <div class="flex items-center gap-2">
+  <div class="bg-neutral-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 mb-4 rounded-2xl">
+    <div class="flex items-center gap-2 shrink-0">
       <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center text-sm">✈️</div>
-      <span class="text-white font-bold text-lg">PlanCation</span>
+      <span class="text-white font-bold text-base sm:text-lg hidden sm:inline">PlanCation</span>
     </div>
-    <nav class="flex items-center gap-1">
+    <nav class="flex items-center gap-0.5 sm:gap-1 overflow-x-auto">
       <a routerLink="/chat" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition">Chat</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Chat</a>
       <a routerLink="/bucketlist" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition">Bucket List</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Bucket List</a>
       <a routerLink="/calendar" routerLinkActive="bg-neutral-700 text-white"
-        class="text-neutral-400 hover:text-white text-sm font-medium px-4 py-2 rounded-lg transition">Calendar</a>
+        class="text-neutral-400 hover:text-white text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Calendar</a>
+      <button (click)="logout()"
+        class="text-neutral-400 hover:text-red-400 text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 rounded-lg transition whitespace-nowrap">Log out</button>
     </nav>
   </div>
 }
@@ -249,23 +257,25 @@
         </p>
       </div>
 
-      <div class="flex gap-1 shrink-0">
+      <div *ngIf="isOwner" class="flex gap-1 shrink-0">
         <button
           type="button"
           (click)="editItem(i); $event.stopPropagation()"
-          class="bg-yellow-400 hover:bg-yellow-300 p-2 rounded-md transition flex items-center justify-center"
+          class="bg-yellow-400 hover:bg-yellow-300 text-neutral-900 text-xs font-semibold px-2 py-1 rounded-md transition"
         >
-          ✏️
+          Edit
         </button>
 
         <button
           type="button"
           (click)="deleteItem(i); $event.stopPropagation()"
-          class="bg-yellow-400 hover:bg-red-400 p-2 rounded-md transition flex items-center justify-center"
+          class="bg-neutral-600 hover:bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-md transition"
         >
-          ❌
+          Delete
         </button>
       </div>
     </div>
   </div>
+</div>
+
 </div>

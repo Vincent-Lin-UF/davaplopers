@@ -1,12 +1,18 @@
 import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { HttpClient } from '@angular/common/http';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { TripService, BucketItemOut } from '../services/trip.service';
+import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 
 export interface BucketItem {
   item_id?: number;
+  trip_id?: number;
   name: string;
   location: string;
   priority: string;
@@ -41,7 +47,16 @@ export class BucketList implements OnInit {
   toastMsg = '';
   private toastTimeout: any;
 
-  constructor(private tripSvc: TripService, private cdr: ChangeDetectorRef) {}
+  isOwner = false;
+  loading = true;
+
+  constructor(
+    private tripSvc: TripService,
+    private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private router: Router,
+    private http: HttpClient,
+  ) {}
 
   showToast(msg: string) {
     this.toastMsg = msg;
@@ -49,9 +64,27 @@ export class BucketList implements OnInit {
     this.toastTimeout = setTimeout(() => { this.toastMsg = ''; this.cdr.detectChanges(); }, 2000);
   }
 
+  logout() {
+    this.auth.logout();
+    this.tripSvc.clearTrip();
+    this.router.navigate(['/login']);
+  }
+
   ngOnInit() {
     this.tripSvc.getOrCreateTrip().subscribe({
-      next: (id) => { this.tripId = id; this._load(); },
+      next: (id) => {
+        this.tripId = id;
+        if (this.showNav) {
+          this._loadAll();
+        } else {
+          this._load();
+        }
+        this.tripSvc.getTripDetails(id).subscribe(trip => {
+          const user = this.auth.getUser();
+          this.isOwner = !!(user && user.user_id === trip.user_id);
+          this.cdr.detectChanges();
+        });
+      },
       error: () => {},
     });
   }
@@ -60,19 +93,47 @@ export class BucketList implements OnInit {
     if (!this.tripId) return;
     // Uses cache — instant on subsequent visits
     this.tripSvc.listItems(this.tripId).subscribe({
-      next: (rows) => { this.bucketList = rows.map(r => this._map(r)); },
-      error: () => {},
+      next: (rows) => {
+        this.bucketList = rows.map(r => this._map(r));
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loading = false; this.cdr.detectChanges(); },
     });
+  }
+
+  private async _loadAll() {
+    try {
+      const trips = await firstValueFrom(this.tripSvc.listAllTrips());
+      if (!trips.length) {
+        this.bucketList = [];
+        this.loading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+      const arrays = await Promise.all(trips.map(t =>
+        firstValueFrom(
+          this.http.get<BucketItemOut[]>(`${environment.apiBase}/api/trips/${t.trip_id}/items`).pipe(
+            catchError(() => of([] as BucketItemOut[]))
+          )
+        )
+      ));
+      const items = arrays.flat();
+      this.bucketList = items.map(r => this._map(r));
+    } catch {}
+    this.loading = false;
+    this.cdr.detectChanges();
   }
 
   private _map(r: BucketItemOut): BucketItem {
     return {
       item_id: r.item_id,
+      trip_id: r.trip_id,
       name: r.title,
       location: r.location_name ?? '',
       priority: r.priority.charAt(0).toUpperCase() + r.priority.slice(1),
       activityTypes: r.category ? r.category.split(',').map(s => s.trim()) : [],
-      image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf',
+      image: r.image || 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf',
     };
   }
 
@@ -81,7 +142,7 @@ export class BucketList implements OnInit {
   searchLocation(): void {
     const term = this.searchTerm.trim();
     if (!term) return;
-    const imageUrl = `https://source.unsplash.com/400x300/?${encodeURIComponent(term)},travel,landmark`;
+    const imageUrl = `https://loremflickr.com/400/300/${encodeURIComponent(term + ',travel,landmark')}`;
     this.searchPreview = { name: term, image: imageUrl };
   }
 
@@ -91,11 +152,11 @@ export class BucketList implements OnInit {
     const image = this.searchPreview.image;
     this.searchPreview = null;
 
-    const payload = { title: location, location_name: location, priority: 'medium', category: 'Travel' };
+    const payload = { title: location, location_name: location, priority: 'medium', category: 'Travel', image };
 
     if (this.tripId) {
       this.tripSvc.createItem(this.tripId, payload).subscribe({
-        next: (c) => { const item = this._map(c); item.image = image; this.bucketList.push(item); },
+        next: (c) => { this.bucketList.push(this._map(c)); },
         error: () => { this.bucketList.push({ name: location, location, priority: 'Medium', activityTypes: ['Travel'], image }); },
       });
     } else {
@@ -121,12 +182,14 @@ export class BucketList implements OnInit {
       location_name: this.newItem.location.trim(),
       priority: this.newItem.priority.toLowerCase(),
       category: this.newItem.activityTypes.join(', '),
+      image: this.newItem.image || null,
     };
 
     if (this.editingIndex !== null && this.tripId) {
       const existing = this.bucketList[this.editingIndex];
+      const editTripId = existing.trip_id || this.tripId;
       if (existing.item_id) {
-        this.tripSvc.updateItem(this.tripId, existing.item_id, payload).subscribe({
+        this.tripSvc.updateItem(editTripId, existing.item_id, payload).subscribe({
           next: (u) => { this.bucketList[this.editingIndex!] = this._map(u); this.resetForm(); this.saving = false; },
           error: () => { this.saving = false; },
         });
@@ -152,8 +215,10 @@ export class BucketList implements OnInit {
 
   deleteItem(index: number): void {
     const item = this.bucketList[index];
-    if (item.item_id && this.tripId) {
-      this.tripSvc.deleteItem(this.tripId, item.item_id).subscribe({
+    if (!confirm(`Delete "${item.name}" from your bucket list?`)) return;
+    const tripId = item.trip_id || this.tripId;
+    if (item.item_id && tripId) {
+      this.tripSvc.deleteItem(tripId, item.item_id).subscribe({
         next: () => { this._splice(index); this.itemDeleted.emit(item); },
         error: () => { this.showToast("Couldn't delete — you may not have permission."); },
       });
@@ -189,7 +254,28 @@ export class BucketList implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => { this.newItem.image = reader.result as string; };
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize to max 600px on longest side and JPEG-compress, so base64 stays small
+        const maxDim = 600;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const scale = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, width, height);
+        this.newItem.image = canvas.toDataURL('image/jpeg', 0.75);
+        this.cdr.detectChanges();
+      };
+      img.src = reader.result as string;
+    };
     reader.readAsDataURL(file);
   }
 

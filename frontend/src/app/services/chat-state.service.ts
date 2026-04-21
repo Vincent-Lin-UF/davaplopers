@@ -7,6 +7,7 @@ export interface Activity {
   location: string;
   description: string;
   duration?: string;
+  image?: string;
 }
 
 export interface DayPlan {
@@ -46,10 +47,16 @@ export interface ChatSession {
   lastPlan: TripPlan | null;
 }
 
+const STORAGE_KEY = 'chat_sessions';
+
 @Injectable({ providedIn: 'root' })
 export class ChatStateService {
   sessions: ChatSession[] = [];
   currentSessionId: string | null = null;
+
+  constructor() {
+    this._load();
+  }
 
   get currentSession(): ChatSession | null {
     return this.sessions.find(s => s.id === this.currentSessionId) || null;
@@ -78,11 +85,13 @@ export class ChatStateService {
     };
     this.sessions.unshift(session);
     this.currentSessionId = session.id;
+    this._save();
     return session;
   }
 
   switchSession(id: string) {
     this.currentSessionId = id;
+    this._save();
   }
 
   add(msg: ChatMessage) {
@@ -92,6 +101,7 @@ export class ChatStateService {
     if (session.messages.length === 1 && msg.role === 'user') {
       session.name = msg.text.length > 35 ? msg.text.substring(0, 35) + '...' : msg.text;
     }
+    this._save();
   }
 
   clearCurrent() {
@@ -99,6 +109,7 @@ export class ChatStateService {
       this.currentSession.messages = [];
       this.currentSession.lastPlan = null;
       this.currentSession.name = 'New Chat';
+      this._save();
     }
   }
 
@@ -107,5 +118,34 @@ export class ChatStateService {
     if (this.currentSessionId === id) {
       this.currentSessionId = this.sessions[0]?.id || null;
     }
+    this._save();
+  }
+
+  clearAll() {
+    this.sessions = [];
+    this.currentSessionId = null;
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  private _save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        sessions: this.sessions,
+        currentSessionId: this.currentSessionId,
+      }));
+    } catch {}
+  }
+
+  private _load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      this.sessions = (data.sessions || []).map((s: any) => ({
+        ...s,
+        createdAt: new Date(s.createdAt),
+      }));
+      this.currentSessionId = data.currentSessionId || null;
+    } catch {}
   }
 }

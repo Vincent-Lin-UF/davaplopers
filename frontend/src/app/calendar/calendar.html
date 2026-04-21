@@ -38,7 +38,7 @@
         </div>
 
         <!-- Calendar -->
-        <div class="w-full lg:flex-1 bg-neutral-800 rounded-2xl p-6 flex flex-col min-h-[600px]">
+        <div class="w-full lg:flex-[2] lg:min-w-0 bg-neutral-800 rounded-2xl p-6 flex flex-col min-h-[600px]">
 
           <!-- Trip selector -->
           <div class="relative mb-4">
@@ -154,7 +154,7 @@
         </div>
 
         <!-- Map -->
-        <div class="w-full lg:w-[900px] shrink-0 bg-neutral-800 rounded-2xl overflow-hidden flex flex-col h-[400px] lg:h-auto">
+        <div class="w-full lg:flex-1 lg:min-w-0 bg-neutral-800 rounded-2xl overflow-hidden flex flex-col h-[400px] lg:h-auto">
           <div class="px-4 py-3 border-b border-neutral-700 shrink-0">
             <p class="text-white text-sm font-bold">{{ tripDestination || 'Trip map' }}</p>
             <p *ngIf="!tripDestination" class="text-neutral-500 text-xs">Set a destination in your trip to see the map.</p>
